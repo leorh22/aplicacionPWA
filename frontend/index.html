@@ -9,12 +9,12 @@
 </head>
 <body>
   <header style="background: #007bff; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
-    <h2>Dashboard de Gastos</h2>
+    <h2>Ahorra+</h2>
     <button id="btnAgregar">Agregar registro</button>
   </header>
 
   <main style="padding: 1rem;">
-    <div id="filtros">
+  <div id="filtros">
   <select id="filtroTipo">
     <option value="">Todos los tipos</option>
     <option value="Gasto">Gasto</option>
@@ -34,10 +34,11 @@
 </div>
     <table border="1" cellpadding="6" id="tablaGastos">
       <thead>
-        <tr>
+        <tr style="text-align: center;">
+          <th>#</th>
+          <th>Descripción</th>
           <th>Tipo</th>
           <th>Categoría</th>
-          <th>Descripción</th>
           <th>Monto</th>
           <th>Fecha</th>
           <th>Acciones</th>
@@ -82,19 +83,60 @@
     </div>
   </div>
 
-  <h2>Gráficas</h2>
+<h2 class="titulo-seccion">Gráficas</h2>
 <div id="grafContainer">
-  <div class="grafica grafica-grande">
-    <canvas id="graficaBarras"></canvas>
+  <!-- CONTENEDOR SUPERIOR -->
+  <div class="contenedor-superior">
+    <div class="grafica grafica-grande">
+      <div class="grafica-header">
+        <h3>Ingresos vs Gastos</h3>
+      </div>
+      <canvas id="graficaBarras"></canvas>
+    </div>
+    <div class="grafica grafica-derecha">
+      <div class="grafica-header">
+        <h3>Balance Mensual</h3>
+      </div>
+      <canvas id="graficaLinea"></canvas>
+    </div>
   </div>
-  <div class="grafica grafica-izquierda">
-    <canvas id="graficaPie"></canvas>
+
+  <!-- CONTENEDOR CIRCULARES -->
+  <div class="contenedor-circulares">
+    <div class="grafica grafica-izquierda">
+      <div class="grafica-header">
+        <h3>Gastos por Categoría</h3>
+      </div>
+      <canvas id="graficaPie"></canvas>
+    </div>
+    <div class="grafica grafica-izquierda-abajo">
+      <div class="grafica-header">
+        <h3>Ingresos por Categoría</h3>
+      </div>
+      <canvas id="graficaIngresos"></canvas>
+    </div>
   </div>
-  <div class="grafica grafica-derecha">
-    <canvas id="graficaLinea"></canvas>
+
+  <!-- CONTENEDOR RADAR -->
+  <div class="contenedor-radar">
+    <div class="grafica grafica-radar">
+      <div id="filtrosRadar">
+        <label>Tipo:</label>
+        <select id="tipoRadar">
+          <option value="Gasto">Gasto</option>
+          <option value="Ingreso">Ingreso</option>
+        </select>
+        <label>Mes 1:</label>
+        <select id="mesRadar1"></select>
+        <label>Mes 2:</label>
+        <select id="mesRadar2"></select>
+      </div>
+      <canvas id="graficaRadar"></canvas>
+    </div>
   </div>
 </div>
   
   <script type="module" src="js/app.js"></script>
+
 </body>
 </html>

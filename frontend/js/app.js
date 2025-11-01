@@ -1,8 +1,7 @@
-import { graficoPastel, graficoBarras, graficoLinea } from "./graficas.js";
-import { inicializarFiltros } from "./filtros.js";
+import { graficoPastel, graficoBarras, graficoLinea, graficoIngresos, graficoRadar } from "./graficas.js";
+//import { inicializarFiltros } from "./filtros.js";
 
 const API_URL = "http://localhost:3000/api/gastos";
-
 const form = document.getElementById("formGasto");
 const popup = document.getElementById("popup");
 const tituloPopup = document.getElementById("tituloPopup");
@@ -35,26 +34,29 @@ async function mostrarGastos() {
     }
 
     // Llenar tabla con los datos
-    gastos.forEach(gasto => {
-      const fila = document.createElement("tr");
-      fila.innerHTML = `
-        <td>${gasto.tipo}</td>
-        <td>${gasto.categoria}</td>
-        <td>${gasto.descripcion}</td>
-        <td>$${gasto.monto.toFixed(2)}</td>
-        <td>${new Date(gasto.fecha).toLocaleDateString("es-MX")}</td>
-        <td>
-          <button onclick="editarGasto('${gasto._id}')">Editar</button>
-          <button onclick="eliminarGasto('${gasto._id}')">Eliminar</button>
-        </td>
-      `;
-      tabla.appendChild(fila);
-    });
+    gastos.forEach((gasto, index) => {
+  const fila = document.createElement("tr");
+  fila.innerHTML = `
+    <td style="text-align: center;">${index + 1}</td>
+    <td>${gasto.descripcion}</td>
+    <td style="text-align: center;">${gasto.tipo}</td>
+    <td style="text-align: center;">${gasto.categoria}</td>
+    <td style="text-align: center;">$${gasto.monto.toFixed(2)}</td>
+    <td style="text-align: center;">${new Date(gasto.fecha).toLocaleDateString("es-MX")}</td>
+    <td style="text-align: center;">
+      <button class="editar" onclick="editarGasto('${gasto._id}')">Editar</button>
+      <button class="eliminar" onclick="eliminarGasto('${gasto._id}')">Eliminar</button>
+    </td>
+  `;
+  tabla.appendChild(fila);
+  });
 
     if (gastos.length > 0) {
       graficoPastel(gastos);
       graficoBarras(gastos);
       graficoLinea(gastos);
+      graficoIngresos(gastos);
+      graficoRadar(gastos); 
     }
 
   } catch (error) {
@@ -78,7 +80,7 @@ async function mostrarGastosDesdeServidor() {
   graficoLinea(gastosGlobal);
 
   // Inicializar los filtros (solo una vez)
-  inicializarFiltros(gastosGlobal, mostrarGastos);
+  //inicializarFiltros(gastosGlobal, mostrarGastos);
 }
 
 mostrarGastosDesdeServidor();
@@ -254,6 +256,7 @@ window.eliminarGasto = async (id) => {
     });
   }
 };
+
 
 // Ejecutar cuando cargue la página
 mostrarGastos();

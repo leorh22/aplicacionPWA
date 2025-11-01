@@ -1,41 +1,218 @@
+.titulo-seccion {
+  text-align: center;
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin-top: 30px;
+  margin-bottom: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+
+/* ===== NUEVA ESTRUCTURA CON CONTENEDORES AGRUPADOS ===== */
 #grafContainer {
   display: grid;
   grid-template-areas:
-    "barras barras"
-    "pie linea";
+    "superior superior"
+    "circulares radar";
+  grid-template-columns: 1fr 2fr;
+  grid-template-rows: auto auto;
+  gap: 20px;
+  padding: 25px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+/* ===== CONTENEDOR SUPERIOR (Barras + Línea) ===== */
+.contenedor-superior {
+  grid-area: superior;
+  display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
   padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border: 1px solid #dee2e6;
 }
 
-.grafica {
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  padding: 10px;
+/* ===== CONTENEDOR CIRCULARES (Pie + Ingresos) ===== */
+.contenedor-circulares {
+  grid-area: circulares;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border: 1px solid #dee2e6;
+}
+
+/* ===== CONTENEDOR RADAR ===== */
+.contenedor-radar {
+  grid-area: radar;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border: 1px solid #dee2e6;
+}
+
+/* ===== ESTILOS DE GRÁFICAS DENTRO DE CONTENEDORES ===== */
+.grafica {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.grafica::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.grafica:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== TAMAÑOS ESPECÍFICOS PARA CADA GRÁFICA ===== */
+.contenedor-superior .grafica {
+  height: 350px;
+  min-height: 300px;
+}
+
+.contenedor-circulares .grafica {
+  flex: 1;
+  min-height: 250px;
+  height: calc(50% - 10px);
+}
+
+.contenedor-radar .grafica {
+  height: 100%;
+  min-height: 500px;
+}
+
+/* ===== CANVAS DENTRO DE CONTENEDORES ===== */
+.contenedor-superior .grafica canvas {
+  width: 100% !important;
+  height: calc(100% - 50px) !important;
+  flex: 1;
+}
+
+.contenedor-circulares .grafica canvas {
+  width: 100% !important;
+  height: calc(100% - 50px) !important;
+  flex: 1;
+}
+
+.contenedor-radar .grafica canvas {
+  width: 100% !important;
+  height: calc(100% - 80px) !important;
+  flex: 1;
+}
+
+/* ===== COLORES DE BARRAS SUPERIORES ===== */
+.grafica-grande::before { background: linear-gradient(90deg, #007bff, #00c6ff); }
+.grafica-derecha::before { background: linear-gradient(90deg, #28a745, #20c997); }
+.grafica-izquierda::before { background: linear-gradient(90deg, #6f42c1, #e83e8c); }
+.grafica-izquierda-abajo::before { background: linear-gradient(90deg, #ffc107, #fd7e14); }
+.grafica-radar::before { background: linear-gradient(90deg, #dc3545, #e83e8c); }
+
+/* ===== FILTROS RADAR MEJORADOS ===== */
+#filtrosRadar {
+  display: flex;
   align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.grafica-grande {
-  grid-area: barras;
-  width: 100%;
+#filtrosRadar label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #495057;
+  margin: 0;
 }
 
-.grafica-izquierda {
-  grid-area: pie;
+#filtrosRadar select {
+  padding: 6px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.85rem;
+  color: #495057;
+  transition: all 0.2s ease;
+  min-width: 100px;
 }
 
-.grafica-derecha {
-  grid-area: linea;
+#filtrosRadar select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-canvas {
-  width: 90% !important;
-  height: 280px !important;
-  max-width: 450px;
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  #grafContainer {
+    grid-template-areas:
+      "superior"
+      "circulares"
+      "radar";
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  
+  .contenedor-superior {
+    grid-template-columns: 1fr;
+  }
+  
+  .contenedor-circulares {
+    flex-direction: row;
+  }
+  
+  .contenedor-circulares .grafica {
+    height: 300px;
+  }
 }
+
+@media (max-width: 768px) {
+  .contenedor-circulares {
+    flex-direction: column;
+  }
+  
+  .contenedor-circulares .grafica {
+    height: 250px;
+  }
+  
+  #filtrosRadar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  #filtrosRadar select {
+    width: 100%;
+  }
+}
+
+
+
 
 
 
