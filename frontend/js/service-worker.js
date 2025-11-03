@@ -1,35 +1,27 @@
-const CACHE_NAME = "gastos-pwa-v1";
-const OFFLINE_URLS = [
-  "/index.html",
-  "/css/style.css",
-  "/js/app.js",
-  "/js/db.js",
-  "/manifest.json",
+const CACHE_NAME = "dashboard-gastos-v1";
+const urlsToCache = [
+  "./",
+  "./index.html",
+  "./css/style.css",
+  "./js/app.js",
+  "./manifest.json",
+  "https://cdn.jsdelivr.net/npm/chart.js",
+  "https://cdn.jsdelivr.net/npm/sweetalert2@11"
 ];
 
-// Instalación: guardar recursos esenciales en cache
-self.addEventListener("install", (event) => {
+// Instalar el service worker y guardar los archivos en caché
+self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_URLS))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
-  self.skipWaiting();
+  console.log("Service Worker instalado");
 });
 
-// Activación: limpiar caches antiguas
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.map((key) => key !== CACHE_NAME && caches.delete(key)))
-    )
-  );
-  self.clients.claim();
-});
-
-// Fetch: responder con cache primero
-self.addEventListener("fetch", (event) => {
+// Interceptar peticiones y responder desde caché si no hay conexión
+self.addEventListener("fetch", event => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request).catch(() => caches.match("/index.html"));
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request);
     })
   );
 });
