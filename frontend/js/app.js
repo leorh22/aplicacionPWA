@@ -1,5 +1,5 @@
 import { graficoPastel, graficoBarras, graficoLinea, graficoIngresos, graficoRadar } from "./graficas.js";
-//import { inicializarFiltros } from "./filtros.js";
+import { inicializarFiltros } from "./filtros.js";
 
 const API_URL = "http://localhost:3000/api/gastos";
 const form = document.getElementById("formGasto");
@@ -14,8 +14,28 @@ const tabla = document.querySelector("#tablaGastos tbody");
 let editando = false;
 let gastoId = null;
 let gastosGlobal = [];
+let datosGlobales = []; // Donde almacenarás los datos completos del backend
 
 // Función principal: obtiene y muestra los registros
+
+const tipoSelect = document.getElementById("tipo");
+const categoriaSelect = document.getElementById("categoria");
+const frecuenciaSelect = document.getElementById("frecuencia");
+const labelFrecuencia = document.getElementById("labelFrecuencia");
+
+
+categoriaSelect.addEventListener("change", () => {
+  const categoria = categoriaSelect.value;
+  if (categoria === "Suscripciones") {
+    frecuenciaSelect.style.display = "block";
+    labelFrecuencia.style.display = "block";
+  } else {
+    frecuenciaSelect.style.display = "none";
+    labelFrecuencia.style.display = "none";
+    frecuenciaSelect.value = "";
+  }
+});
+
 async function mostrarGastos() {
   try {
     const respuesta = await fetch(API_URL);
@@ -57,6 +77,7 @@ async function mostrarGastos() {
       graficoLinea(gastos);
       graficoIngresos(gastos);
       graficoRadar(gastos); 
+      mostrarRecurrentes(gastos);
     }
 
   } catch (error) {
@@ -68,6 +89,112 @@ async function mostrarGastos() {
     });
   }
 } 
+
+function calcularTiempoRestante(fechaObjetivo) {
+  const ahora = new Date();
+  const objetivo = new Date(fechaObjetivo);
+  const diffMs = objetivo - ahora;
+
+  if (diffMs <= 0) return "Vencido";
+
+  const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const meses = Math.floor(diffDias / 30);
+  const dias = diffDias % 30;
+
+  if (meses > 0 && dias > 0) return `${meses} mes${meses > 1 ? "es" : ""} ${dias} día${dias > 1 ? "s" : ""}`;
+  if (meses > 0) return `${meses} mes${meses > 1 ? "es" : ""}`;
+  return `${dias} día${dias > 1 ? "s" : ""}`;
+}
+
+
+function mostrarRecurrentes(gastos) {
+  const tabla = document.querySelector("#tablaRecurrentes tbody");
+  tabla.innerHTML = "";
+
+  // Filtrar solo los que tienen frecuencia asignada
+  const recurrentes = gastos.filter(g => g.frecuencia && g.frecuencia !== "");
+
+  if (recurrentes.length === 0) {
+    const filaVacia = document.createElement("tr");
+    filaVacia.innerHTML = `<td colspan="7" style="text-align:center;">No hay pagos recurrentes</td>`;
+    tabla.appendChild(filaVacia);
+    return;
+  }
+
+  recurrentes.forEach((g, i) => {
+    const proximo = g.fechaRenovacion
+      ? new Date(g.fechaRenovacion).toLocaleDateString("es-MX", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
+      })
+  :   "—";
+
+    const fila = document.createElement("tr");
+    fila.innerHTML = `
+      <td style="text-align:center;">${i + 1}</td>
+      <td>${g.descripcion}</td>
+      <td style="text-align:center;">${g.categoria}</td>
+      <td style="text-align:center;">$${g.monto.toFixed(2)}</td>
+      <td style="text-align:center;">${g.frecuencia}</td>
+      <td style="text-align:center;">${proximo}</td>
+    `;
+    tabla.appendChild(fila);
+  });
+}
+
+
+const respuesta = await fetch(API_URL);
+const datos = await respuesta.json();
+// mostrarGastos(datos) ya la tienes
+inicializarFiltros(datos, mostrarGastos);
+
+
+
+async function inicializarGraficas() {
+  try {
+    const respuesta = await fetch(API_URL);
+    datosGlobales = await respuesta.json();
+
+    // Poblar selector de año
+    const selectAnio = document.getElementById("filtroAnio");
+    const anios = [...new Set(datosGlobales.map(d => new Date(d.fecha).getFullYear()))].sort((a, b) => b - a);
+
+    selectAnio.innerHTML = "";
+    const optTodos = document.createElement("option");
+    optTodos.value = "Todos";
+    optTodos.textContent = "Todos";
+    selectAnio.appendChild(optTodos);
+
+    anios.forEach(a => {
+      const opt = document.createElement("option");
+      opt.value = a;
+      opt.textContent = a;
+      selectAnio.appendChild(opt);
+    });
+
+    // Mostrar gráficas por defecto (Todos los años)
+    graficoBarras(datosGlobales);
+    graficoLinea(datosGlobales);
+
+    // Evento: cambio de año
+    selectAnio.addEventListener("change", () => {
+      const anioSel = selectAnio.value;
+
+      const datosFiltrados =
+        anioSel === "Todos"
+          ? datosGlobales
+          : datosGlobales.filter(d => new Date(d.fecha).getFullYear() === parseInt(anioSel));
+
+      graficoBarras(datosFiltrados);
+      graficoLinea(datosFiltrados);
+    });
+  } catch (err) {
+    console.error("Error al cargar datos para gráficas:", err);
+  }
+}
+
+inicializarGraficas();
 
 async function mostrarGastosDesdeServidor() {
   const res = await fetch("/api/gastos");
@@ -84,10 +211,6 @@ async function mostrarGastosDesdeServidor() {
 }
 
 mostrarGastosDesdeServidor();
-
-// ==== SELECTS ====
-const tipoSelect = document.getElementById("tipo");
-const categoriaSelect = document.getElementById("categoria");
 
 // Categorías dinámicas según el tipo
 const categorias = {
@@ -141,12 +264,27 @@ cancelar.onclick = () => {
 form.onsubmit = async (e) => {
   e.preventDefault();
 
+  // Obtener valores del formulario
+  const fechaBase = new Date(document.getElementById("fecha").value);
+  const frecuencia = form.frecuencia ? form.frecuencia.value : "";
+
+  // Calcular la próxima fecha de pago (fechaRenovacion)
+  let fechaRenovacion = null;
+  if (frecuencia) {
+    fechaRenovacion = new Date(fechaBase);
+    if (frecuencia === "Semanal") fechaRenovacion.setDate(fechaBase.getDate() + 7);
+    if (frecuencia === "Mensual") fechaRenovacion.setMonth(fechaBase.getMonth() + 1);
+    if (frecuencia === "Anual") fechaRenovacion.setFullYear(fechaBase.getFullYear() + 1);
+  }
+
   const nuevoGasto = {
     tipo: tipoSelect.value,
     categoria: categoriaSelect.value,
     descripcion: document.getElementById("descripcion").value,
     monto: parseFloat(document.getElementById("monto").value),
-    fecha: document.getElementById("fecha").value
+    fecha: document.getElementById("fecha").value,
+    frecuencia: frecuencia,
+    fechaRenovacion: fechaRenovacion ? fechaRenovacion.toISOString() : null
   };
 
   try {
@@ -257,6 +395,19 @@ window.eliminarGasto = async (id) => {
   }
 };
 
+// Mostrar frecuencia solo si aplica
+categoriaSelect.addEventListener("change", () => {
+  const categoria = categoriaSelect.value;
+  const categoriasRecurrentes = ["Suscripciones", "Renta", "Pago de Tarjeta"];
+
+  if (categoriasRecurrentes.includes(categoria)) {
+    frecuenciaSelect.parentElement.style.display = "block";
+  } else {
+    frecuenciaSelect.value = "";
+    frecuenciaSelect.parentElement.style.display = "none";
+  }
+});
 
 // Ejecutar cuando cargue la página
 mostrarGastos();
+

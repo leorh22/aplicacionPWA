@@ -1,39 +1,99 @@
 // graficas.js
-let graficaPie, graficaBarras, graficaLinea;
+let graficaBarras, graficaLinea;
 
 // === GRÁFICO DE PASTEL ===
 // Muestra la distribución del gasto por categoría
-export function graficoPastel(gastos) {
+let graficaPie = null;
+
+export function graficoPastel(datos) {
   const ctx = document.getElementById("graficaPie").getContext("2d");
 
-  // Filtramos solo los gastos
-  const soloGastos = gastos.filter(g => g.tipo === "Gasto");
+  const selectAnio = document.getElementById("anioGastos");
+  const selectMes = document.getElementById("mesGastos");
 
-  const categorias = [...new Set(soloGastos.map(g => g.categoria))];
-  const montos = categorias.map(cat =>
-    soloGastos.filter(g => g.categoria === cat).reduce((sum, item) => sum + item.monto, 0)
-  );
+  // Generar años únicos
+  const anios = [...new Set(datos.map(d => new Date(d.fecha).getFullYear()))].sort((a, b) => b - a);
+  const meses = [
+    "Todos", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
 
-  if (graficaPie) graficaPie.destroy();
+  // Poblar selects solo una vez
+  if (selectAnio.options.length === 0) {
+    const optTodos = document.createElement("option");
+    optTodos.value = "Todos";
+    optTodos.textContent = "Todos";
+    selectAnio.appendChild(optTodos);
+    anios.forEach(a => {
+      const opt = document.createElement("option");
+      opt.value = a;
+      opt.textContent = a;
+      selectAnio.appendChild(opt);
+    });
+  }
 
-  graficaPie = new Chart(ctx, {
-    type: "pie",
-    data: {
-      labels: categorias,
-      datasets: [{
-        label: "Gastos",
-        data: montos,
-        backgroundColor: [
-          "#FF6384", "#36A2EB", "#FFCE56",
-          "#4BC0C0", "#9966FF", "#FF9F40", "#C9CBCF"
-        ]
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: "bottom" } }
-    }
-  });
+  if (selectMes.options.length === 0) {
+    meses.forEach((m, i) => {
+      const opt = document.createElement("option");
+      opt.value = i === 0 ? "Todos" : i - 1; // enero=0, etc.
+      opt.textContent = m;
+      selectMes.appendChild(opt);
+    });
+  }
+
+  // Función para filtrar y graficar
+  function actualizarGrafico() {
+    const anioSel = selectAnio.value;
+    const mesSel = selectMes.value;
+
+    const filtrados = datos.filter(d => {
+      const f = new Date(d.fecha);
+      const cumpleTipo = d.tipo === "Gasto";
+      const cumpleAnio = anioSel === "Todos" || f.getFullYear() === parseInt(anioSel);
+      const cumpleMes = mesSel === "Todos" || f.getMonth() === parseInt(mesSel);
+      return cumpleTipo && cumpleAnio && cumpleMes;
+    });
+
+    const categorias = [...new Set(filtrados.map(d => d.categoria))];
+    const montos = categorias.map(cat =>
+      filtrados.filter(d => d.categoria === cat).reduce((sum, i) => sum + i.monto, 0)
+    );
+
+    if (graficaPie) graficaPie.destroy();
+
+    graficaPie = new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels: categorias,
+        datasets: [{
+          label: "Gastos",
+          data: montos,
+          backgroundColor: [
+            "#FF6384", "#36A2EB", "#FFCE56",
+            "#4BC0C0", "#9966FF", "#FF9F40", "#C9CBCF"
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: "bottom" },
+          title: {
+            display: true,
+            text: `Gastos por categoría ${
+              anioSel === "Todos" ? "" : `(${anioSel}${mesSel !== "Todos" ? ` - ${meses[parseInt(mesSel) + 1]}` : ""})`
+            }`
+          }
+        }
+      }
+    });
+  }
+
+  // Eventos
+  selectAnio.addEventListener("change", actualizarGrafico);
+  selectMes.addEventListener("change", actualizarGrafico);
+
+  actualizarGrafico();
 }
 
 // === GRÁFICO DE BARRAS ===
@@ -136,68 +196,97 @@ export function graficoLinea(datos) {
 
 let graficaIngresos = null;
 
-// === GRÁFICO DE INGRESOS POR CATEGORÍA (DONA) ===
 export function graficoIngresos(datos) {
-  const canvas = document.getElementById("graficaIngresos");
-  if (!canvas) {
-    console.warn("No se encontró el elemento #graficaIngresos en el DOM");
-    return;
+  const ctx = document.getElementById("graficaIngresos").getContext("2d");
+
+  const selectAnio = document.getElementById("anioIngresos");
+  const selectMes = document.getElementById("mesIngresos");
+
+  const anios = [...new Set(datos.map(d => new Date(d.fecha).getFullYear()))].sort((a, b) => b - a);
+  const meses = [
+    "Todos", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+
+  if (selectAnio.options.length === 0) {
+    const optTodos = document.createElement("option");
+    optTodos.value = "Todos";
+    optTodos.textContent = "Todos";
+    selectAnio.appendChild(optTodos);
+    anios.forEach(a => {
+      const opt = document.createElement("option");
+      opt.value = a;
+      opt.textContent = a;
+      selectAnio.appendChild(opt);
+    });
   }
 
-  const ctx = canvas.getContext("2d");
+  if (selectMes.options.length === 0) {
+    meses.forEach((m, i) => {
+      const opt = document.createElement("option");
+      opt.value = i === 0 ? "Todos" : i - 1;
+      opt.textContent = m;
+      selectMes.appendChild(opt);
+    });
+  }
 
-  // Filtrar solo ingresos
-  const ingresos = datos.filter(d => d.tipo === "Ingreso");
+  function actualizarGrafico() {
+    const anioSel = selectAnio.value;
+    const mesSel = selectMes.value;
 
-  if (ingresos.length === 0) {
+    const filtrados = datos.filter(d => {
+      const f = new Date(d.fecha);
+      const cumpleTipo = d.tipo === "Ingreso";
+      const cumpleAnio = anioSel === "Todos" || f.getFullYear() === parseInt(anioSel);
+      const cumpleMes = mesSel === "Todos" || f.getMonth() === parseInt(mesSel);
+      return cumpleTipo && cumpleAnio && cumpleMes;
+    });
+
+    const categorias = [...new Set(filtrados.map(d => d.categoria))];
+    const montos = categorias.map(cat =>
+      filtrados.filter(d => d.categoria === cat).reduce((sum, i) => sum + i.monto, 0)
+    );
+
     if (graficaIngresos) graficaIngresos.destroy();
-    return;
+
+    graficaIngresos = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: categorias,
+        datasets: [{
+          label: "Ingresos",
+          data: montos,
+          backgroundColor: [
+            "#36A2EB", "#4BC0C0", "#9966FF",
+            "#FFCE56", "#2ECC71", "#F39C12", "#E74C3C"
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: "bottom" },
+          title: {
+            display: true,
+            text: `Ingresos por categoría ${
+              anioSel === "Todos" ? "" : `(${anioSel}${mesSel !== "Todos" ? ` - ${meses[parseInt(mesSel) + 1]}` : ""})`
+            }`
+          }
+        },
+        cutout: "60%"
+      }
+    });
   }
 
-  // Categorías únicas
-  const categorias = [...new Set(ingresos.map(d => d.categoria))];
+  selectAnio.addEventListener("change", actualizarGrafico);
+  selectMes.addEventListener("change", actualizarGrafico);
 
-  // Total por categoría
-  const totales = categorias.map(cat =>
-    ingresos
-      .filter(i => i.categoria === cat)
-      .reduce((sum, item) => sum + item.monto, 0)
-  );
-
-  if (graficaIngresos) graficaIngresos.destroy();
-
-  graficaIngresos = new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: categorias,
-      datasets: [{
-        label: "Ingresos",
-        data: totales,
-        backgroundColor: [
-          "#36A2EB", "#4BC0C0", "#9966FF", "#FFCE56",
-          "#2ECC71", "#F39C12", "#E74C3C"
-        ],
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: "bottom"
-        },
-        title: {
-          display: true,
-        }
-      },
-      cutout: "60%", // controla el grosor del anillo
-    }
-  });
+  actualizarGrafico();
 }
 
 let graficaRadar = null;
 
-// === GRÁFICO RADAR COMPARATIVO (POR MES Y AÑO) ===
+// === GRÁFICO RADAR COMPARATIVO MULTIANUAL ===
 export function graficoRadar(datos) {
   const canvas = document.getElementById("graficaRadar");
   if (!canvas) return;
@@ -206,41 +295,51 @@ export function graficoRadar(datos) {
   const tipoSelect = document.getElementById("tipoRadar");
   const mes1Select = document.getElementById("mesRadar1");
   const mes2Select = document.getElementById("mesRadar2");
+  const anio1Select = document.getElementById("anioRadar1");
+  const anio2Select = document.getElementById("anioRadar2");
 
-  // --- Crear lista única año-mes ---
-  const clavesMes = [...new Set(
-    datos.map(d => {
-      const f = new Date(d.fecha);
-      return `${f.getFullYear()}-${String(f.getMonth()).padStart(2, "0")}`;
-    })
-  )].sort();
-
-  // --- Generar etiquetas legibles ---
-  const nombresMeses = clavesMes.map(c => {
-    const [year, mes] = c.split("-");
-    return `${new Date(year, mes).toLocaleString("es-ES", { month: "long" })} ${year}`;
-  });
+  const nombresMeses = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+  ];
 
   // --- Poblar selects ---
   mes1Select.innerHTML = "";
   mes2Select.innerHTML = "";
-  clavesMes.forEach((clave, i) => {
+  nombresMeses.forEach((m, i) => {
     const opt1 = document.createElement("option");
     const opt2 = document.createElement("option");
-    opt1.value = opt2.value = clave;
-    opt1.textContent = opt2.textContent = nombresMeses[i];
+    opt1.value = opt2.value = i;
+    opt1.textContent = opt2.textContent = m.charAt(0).toUpperCase() + m.slice(1);
     mes1Select.appendChild(opt1);
     mes2Select.appendChild(opt2);
   });
 
+  const aniosUnicos = [...new Set(datos.map(d => new Date(d.fecha).getFullYear()))].sort((a, b) => b - a);
+  anio1Select.innerHTML = "";
+  anio2Select.innerHTML = "";
+  aniosUnicos.forEach(a => {
+    const opt1 = document.createElement("option");
+    const opt2 = document.createElement("option");
+    opt1.value = opt2.value = a;
+    opt1.textContent = opt2.textContent = a;
+    anio1Select.appendChild(opt1);
+    anio2Select.appendChild(opt2);
+  });
+
   // Selección inicial
   mes1Select.selectedIndex = 0;
-  mes2Select.selectedIndex = Math.min(1, clavesMes.length - 1);
+  mes2Select.selectedIndex = 1;
+  anio1Select.selectedIndex = 0;
+  anio2Select.selectedIndex = 0;
 
+  // --- Dibujar Radar ---
   function actualizarRadar() {
     const tipo = tipoSelect.value;
-    const mes1 = mes1Select.value;
-    const mes2 = mes2Select.value;
+    const mes1 = parseInt(mes1Select.value);
+    const mes2 = parseInt(mes2Select.value);
+    const anio1 = parseInt(anio1Select.value);
+    const anio2 = parseInt(anio2Select.value);
 
     const categorias =
       tipo === "Gasto"
@@ -251,8 +350,12 @@ export function graficoRadar(datos) {
       datos
         .filter(d => {
           const f = new Date(d.fecha);
-          const clave = `${f.getFullYear()}-${String(f.getMonth()).padStart(2, "0")}`;
-          return d.tipo === tipo && clave === mes1 && d.categoria === cat;
+          return (
+            d.tipo === tipo &&
+            f.getFullYear() === anio1 &&
+            f.getMonth() === mes1 &&
+            d.categoria === cat
+          );
         })
         .reduce((sum, item) => sum + item.monto, 0)
     );
@@ -261,8 +364,12 @@ export function graficoRadar(datos) {
       datos
         .filter(d => {
           const f = new Date(d.fecha);
-          const clave = `${f.getFullYear()}-${String(f.getMonth()).padStart(2, "0")}`;
-          return d.tipo === tipo && clave === mes2 && d.categoria === cat;
+          return (
+            d.tipo === tipo &&
+            f.getFullYear() === anio2 &&
+            f.getMonth() === mes2 &&
+            d.categoria === cat
+          );
         })
         .reduce((sum, item) => sum + item.monto, 0)
     );
@@ -275,7 +382,7 @@ export function graficoRadar(datos) {
         labels: categorias,
         datasets: [
           {
-            label: nombresMeses[clavesMes.indexOf(mes1)],
+            label: `${nombresMeses[mes1]} ${anio1}`,
             data: datosMes1,
             backgroundColor: "rgba(54, 162, 235, 0.3)",
             borderColor: "#36A2EB",
@@ -283,7 +390,7 @@ export function graficoRadar(datos) {
             pointBackgroundColor: "#36A2EB"
           },
           {
-            label: nombresMeses[clavesMes.indexOf(mes2)],
+            label: `${nombresMeses[mes2]} ${anio2}`,
             data: datosMes2,
             backgroundColor: "rgba(255, 99, 132, 0.3)",
             borderColor: "#FF6384",
@@ -299,14 +406,30 @@ export function graficoRadar(datos) {
           legend: { position: "bottom" },
           title: {
             display: true,
-            text: `Comparativa de ${tipo.toLowerCase()}s por categoría`
+            text: `Comparativa de ${tipo.toLowerCase()}s (${nombresMeses[mes1]} ${anio1} vs ${nombresMeses[mes2]} ${anio2})`
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: $${ctx.raw.toLocaleString("es-MX")}`
+            }
           }
         },
         scales: {
           r: {
             beginAtZero: true,
-            ticks: { stepSize: 50 },
-            pointLabels: { font: { size: 12 } }
+            ticks: {
+              callback: (value) => {
+                if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + "M";
+                if (value >= 1_000) return (value / 1_000).toFixed(1) + "K";
+                return value;
+              },
+              backdropColor: "transparent",
+              color: "#666"
+            },
+            pointLabels: {
+              font: { size: 13, weight: "bold" },
+              color: "#222"
+            }
           }
         }
       }
@@ -314,10 +437,10 @@ export function graficoRadar(datos) {
   }
 
   // --- Eventos ---
-  tipoSelect.addEventListener("change", actualizarRadar);
-  mes1Select.addEventListener("change", actualizarRadar);
-  mes2Select.addEventListener("change", actualizarRadar);
+  [tipoSelect, mes1Select, mes2Select, anio1Select, anio2Select].forEach(select =>
+    select.addEventListener("change", actualizarRadar)
+  );
 
-  actualizarRadar(); // primera carga
+  actualizarRadar();
 }
 

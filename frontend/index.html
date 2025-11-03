@@ -9,7 +9,7 @@
 </head>
 <body>
   <header style="background: #007bff; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
-    <h2>Ahorra+</h2>
+    <h2>FinTrack</h2>
     <button id="btnAgregar">Agregar registro</button>
   </header>
 
@@ -48,6 +48,23 @@
     </table>
   </main>
 
+<section id="recurrentesSection" style="margin-top: 2rem;">
+  <h3>Pagos Recurrentes</h3>
+  <table id="tablaRecurrentes" border="1" cellpadding="6" style="width:100%;">
+    <thead>
+      <tr style="text-align: center;">
+        <th>#</th>
+        <th>Descripción</th>
+        <th>Categoría</th>
+        <th>Monto</th>
+        <th>Frecuencia</th>
+        <th>Próximo pago</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
   <!-- Popup -->
   <div id="popup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
       background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
@@ -77,16 +94,31 @@
   <label>Fecha:</label><br>
   <input type="date" id="fecha" required><br><br>
 
+  <label id="labelFrecuencia" style="display:none;">Frecuencia:</label><br>
+<select id="frecuencia" name="frecuencia" style="display:none;">
+  <option value="">Único</option>
+  <option value="Semanal">Semanal</option>
+  <option value="Mensual">Mensual</option>
+  <option value="Anual">Anual</option>
+</select><br><br>
+
   <button type="submit">Guardar</button>
   <button type="button" id="cancelar">Cancelar</button>
 </form>
     </div>
   </div>
 
+
+
+
 <h2 class="titulo-seccion">Gráficas</h2>
 <div id="grafContainer">
   <!-- CONTENEDOR SUPERIOR -->
   <div class="contenedor-superior">
+    <div class="filtro-anual">
+      <label for="filtroAnio">Año:</label>
+      <select id="filtroAnio"></select>
+    </div>
     <div class="grafica grafica-grande">
       <div class="grafica-header">
         <h3>Ingresos vs Gastos</h3>
@@ -103,19 +135,34 @@
 
   <!-- CONTENEDOR CIRCULARES -->
   <div class="contenedor-circulares">
-    <div class="grafica grafica-izquierda">
-      <div class="grafica-header">
-        <h3>Gastos por Categoría</h3>
-      </div>
-      <canvas id="graficaPie"></canvas>
+  <!-- GASTOS -->
+   <div class="filtros-circulares">
+      <label for="anioGastos">Año</label>
+      <select id="anioGastos"></select>
+      <label for="mesGastos">Mes</label>
+      <select id="mesGastos"></select>
     </div>
-    <div class="grafica grafica-izquierda-abajo">
-      <div class="grafica-header">
-        <h3>Ingresos por Categoría</h3>
-      </div>
-      <canvas id="graficaIngresos"></canvas>
+  <div class="grafica grafica-izquierda">
+    <div class="grafica-header">
+      <h3>Gastos por Categoría</h3>
     </div>
+    <canvas id="graficaPie"></canvas>
   </div>
+
+  <!-- INGRESOS -->
+   <div class="filtros-circulares">
+      <label for="mesIngresos">Año</label>
+      <select id="anioIngresos"></select>
+      <label for="mesIngresos">Mes</label>
+      <select id="mesIngresos"></select>
+    </div>
+  <div class="grafica grafica-izquierda-abajo">
+    <div class="grafica-header">
+      <h3>Ingresos por Categoría</h3>
+    </div>
+    <canvas id="graficaIngresos"></canvas>
+  </div>
+</div>
 
   <!-- CONTENEDOR RADAR -->
   <div class="contenedor-radar">
@@ -126,8 +173,13 @@
           <option value="Gasto">Gasto</option>
           <option value="Ingreso">Ingreso</option>
         </select>
+
+        <label>Año 1:</label>
+        <select id="anioRadar1"></select>
         <label>Mes 1:</label>
         <select id="mesRadar1"></select>
+        <label>Año 2:</label>
+        <select id="anioRadar2"></select>
         <label>Mes 2:</label>
         <select id="mesRadar2"></select>
       </div>

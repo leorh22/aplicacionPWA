@@ -7,6 +7,11 @@ const gastoSchema = new mongoose.Schema({
   monto: { type: Number, required: true },
   fecha: { type: Date },
   fechaRenovacion: { type: Date },
+  frecuencia:{
+    type: String, 
+    enum: ["", "Semanal", "Mensual", "Anual"], 
+    default: "" 
+  },
 }, { timestamps: true });
 
 export default mongoose.model("Gasto", gastoSchema);
