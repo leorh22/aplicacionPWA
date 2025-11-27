@@ -1,8 +1,6 @@
-// filtros.js
-// Inicializa filtros que afectan SOLO a la tabla.
-// Requiere que le pases los datos completos y una función mostrarGastos(lista).
+// frontend/js/filtros.js
 
-export function inicializarFiltros(datos, mostrarGastos) {
+export function inicializarFiltros() {
   const filtroTipo = document.getElementById("filtroTipo");
   const filtroCategoria = document.getElementById("filtroCategoria");
   const filtroDesde = document.getElementById("filtroDesde");
@@ -10,96 +8,84 @@ export function inicializarFiltros(datos, mostrarGastos) {
   const filtroBusqueda = document.getElementById("filtroBusqueda");
   const btnLimpiar = document.getElementById("limpiarFiltros");
 
-  // Precalcular categorías por tipo
-  const categoriasPorTipo = {
-    Gasto: [...new Set(datos.filter(d => d.tipo === "Gasto").map(d => d.categoria))].sort(),
-    Ingreso: [...new Set(datos.filter(d => d.tipo === "Ingreso").map(d => d.categoria))].sort(),
-  };
-  const categoriasUnion = [...new Set([...categoriasPorTipo.Gasto, ...categoriasPorTipo.Ingreso])].sort();
+  if (!filtroTipo || !filtroCategoria || !filtroDesde || !filtroHasta || !filtroBusqueda) {
+    console.warn("No se encontraron todos los elementos de filtro en el DOM");
+    return;
+  }
 
-  // Rellena el select de categorías según el tipo seleccionado
-  function poblarCategorias(tipoActual) {
-    // Reset
-    filtroCategoria.innerHTML = "";
-    const optDefault = document.createElement("option");
-    optDefault.value = "";
-    optDefault.textContent = "Todas las categorías";
-    filtroCategoria.appendChild(optDefault);
+  // Llenar combo de categorías a partir de los datos
+  function poblarCategorias() {
+    const datos = window.gastosGlobal || [];
+    const categoriasUnicas = [...new Set(datos.map(g => g.categoria))].sort();
 
-    let lista;
-    if (tipoActual === "Gasto") lista = categoriasPorTipo.Gasto;
-    else if (tipoActual === "Ingreso") lista = categoriasPorTipo.Ingreso;
-    else lista = categoriasUnion; // Todos
-
-    lista.forEach(cat => {
-      const opt = document.createElement("option");
-      opt.value = cat;
-      opt.textContent = cat;
-      filtroCategoria.appendChild(opt);
+    filtroCategoria.innerHTML = '<option value="">Todas las categorías</option>';
+    categoriasUnicas.forEach(cat => {
+      const op = document.createElement("option");
+      op.value = cat;
+      op.textContent = cat;
+      filtroCategoria.appendChild(op);
     });
   }
 
-  // Lógica de filtrado (solo tabla)
   function aplicarFiltros() {
-    const tipoSel = filtroTipo.value;          // "", "Gasto", "Ingreso"
-    const catSel = filtroCategoria.value;      // "", o una categoría válida del combo actual
+    const datos = window.gastosGlobal || [];
+    let filtrados = datos.slice();
+
+    const tipo = filtroTipo.value;
+    const categoria = filtroCategoria.value;
     const desde = filtroDesde.value ? new Date(filtroDesde.value) : null;
     const hasta = filtroHasta.value ? new Date(filtroHasta.value) : null;
-    const q = filtroBusqueda.value.toLowerCase().trim();
+    const texto = filtroBusqueda.value.trim().toLowerCase();
 
-    const filtrados = datos.filter(d => {
-      const fecha = new Date(d.fecha);
-      // Tipo
-      const okTipo = !tipoSel || d.tipo === tipoSel;
+    filtrados = filtrados.filter(g => {
+      if (tipo && g.tipo !== tipo) return false;
+      if (categoria && g.categoria !== categoria) return false;
 
-      // Categoría:
-      // - Si hay tipo (Gasto/Ingreso), la categoría ya pertenece a ese dominio.
-      // - Si no hay tipo (Todos) y hay categoría seleccionada, se filtra por esa categoría sobre ambos tipos.
-      const okCategoria = !catSel || d.categoria === catSel;
+      const fechaG = new Date(g.fecha);
 
-      // Fechas
-      const okDesde = !desde || fecha >= desde;
-      const okHasta = !hasta || fecha <= hasta;
+      if (desde) {
+        const d = new Date(desde);
+        d.setHours(0, 0, 0, 0);
+        if (fechaG < d) return false;
+      }
 
-      // Búsqueda por descripción
-      const okTexto = d.descripcion.toLowerCase().includes(q);
+      if (hasta) {
+        const h = new Date(hasta);
+        h.setHours(23, 59, 59, 999);
+        if (fechaG > h) return false;
+      }
 
-      return okTipo && okCategoria && okDesde && okHasta && okTexto;
+      if (texto && !g.descripcion.toLowerCase().includes(texto)) return false;
+
+      return true;
     });
 
-    mostrarGastos(filtrados);
+    // 👉 Solo actualizamos la tabla
+    if (window.pintarTabla) {
+      window.pintarTabla(filtrados);
+    } else {
+      console.error("window.pintarTabla no está definido");
+    }
   }
 
   // Eventos
-  filtroTipo.addEventListener("change", () => {
-    // Al cambiar el tipo, repoblar categorías según el tipo elegido
-    const tipo = filtroTipo.value; // "", "Gasto", "Ingreso"
-    const categoriaAnterior = filtroCategoria.value;
-    poblarCategorias(tipo);
-
-    // Si la categoría previamente seleccionada no existe en la nueva lista, se limpia
-    const existe = [...filtroCategoria.options].some(o => o.value === categoriaAnterior);
-    filtroCategoria.value = existe ? categoriaAnterior : "";
-
-    aplicarFiltros();
-  });
-
-  [filtroCategoria, filtroDesde, filtroHasta].forEach(el =>
-    el.addEventListener("change", aplicarFiltros)
-  );
+  filtroTipo.addEventListener("change", aplicarFiltros);
+  filtroCategoria.addEventListener("change", aplicarFiltros);
+  filtroDesde.addEventListener("change", aplicarFiltros);
+  filtroHasta.addEventListener("change", aplicarFiltros);
   filtroBusqueda.addEventListener("input", aplicarFiltros);
 
-  btnLimpiar.addEventListener("click", () => {
-    filtroTipo.value = "";
-    poblarCategorias(""); // union
-    filtroCategoria.value = "";
-    filtroDesde.value = "";
-    filtroHasta.value = "";
-    filtroBusqueda.value = "";
-    mostrarGastos(datos);
-  });
+  if (btnLimpiar) {
+    btnLimpiar.addEventListener("click", () => {
+      filtroTipo.value = "";
+      filtroCategoria.value = "";
+      filtroDesde.value = "";
+      filtroHasta.value = "";
+      filtroBusqueda.value = "";
+      aplicarFiltros();
+    });
+  }
 
-  // Inicialización
-  poblarCategorias(""); // por defecto: Todos -> unión de categorías
-  mostrarGastos(datos); // pinta tabla completa de inicio
+  // Llenar categorías al inicio
+  poblarCategorias();
 }

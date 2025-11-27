@@ -7,7 +7,7 @@
   <!-- PWA -->
    <link rel="manifest" href="manifest.json">
    <meta name="theme-color" content="#007bff">
-   <link rel="icon" href="icon-192.png">
+   <link rel="icon" href="icons/Alternative-Icon.png" type="image/png">
 
   <!-- Estilos -->
   <link rel="stylesheet" href="./css/style.css" />
@@ -18,11 +18,32 @@
 </head>
 <body>
   <header style="background: #007bff; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
-    <h2>FinTrack</h2>
+    <img src="icons/no-bg.png" alt="imagen logo" style="height: 60px;">
+    <button id="btnPruebaTema" style="margin-right: 10px; padding: 8px 12px; border: none; border-radius: 5px; background: #6c757d; color: white;">
+      🌙 Probar Modo Oscuro
+    </button>
     <button id="btnAgregar">Agregar registro</button>
   </header>
 
-  <main style="padding: 1rem;">
+<section id="presupuestoSection">
+  <div class="contenedor-presupuesto">
+    <div class="info-presupuesto">
+      <h3>Presupuesto mensual</h3>
+      <p id="presupuestoResumen" class="sin-presupuesto">
+        Aún no has definido un presupuesto para este mes.
+      </p>
+    </div>
+    <div class="grupo-acciones">
+      <button id="btnAgregarPresupuesto">Definir / Editar presupuesto</button>
+      <div id="accionesTabla">
+        <button id="btnExportCSV">Exportar CSV</button>
+        <button id="btnExportExcel">Exportar Excel</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+  <main style="padding: 1rem">
   <div id="filtros">
   <select id="filtroTipo">
     <option value="">Todos los tipos</option>
@@ -40,6 +61,7 @@
   <input type="text" id="filtroBusqueda" placeholder="Buscar descripción...">
 
   <button id="limpiarFiltros">Limpiar</button>
+
 </div>
     <table border="1" cellpadding="6" id="tablaGastos">
       <thead>
@@ -118,7 +140,30 @@
   </div>
 
 
+<!-- Popup Presupuesto -->
+<div id="popupPresupuesto">
+  <div>
+    <h3>Configurar presupuesto del mes</h3>
+    <form id="formPresupuesto">
+      <label>Tipo de presupuesto:</label>
+      <select id="presTipo" required>
+        <option value="general">General (todo el mes)</option>
+        <option value="categoria">Por categoría</option>
+      </select>
 
+      <div id="campoCategoriaPresupuesto">
+        <label>Categoría:</label>
+        <input type="text" id="presCategoria" placeholder="Ej. Comida">
+      </div>
+
+      <label>Monto mensual:</label>
+      <input type="number" id="presMonto" min="0" step="0.01" required>
+
+      <button type="submit">Guardar</button>
+      <button type="button" id="cancelarPresupuesto">Cancelar</button>
+    </form>
+  </div>
+</div>
 
 <h2 class="titulo-seccion">Gráficas</h2>
 <div id="grafContainer">
@@ -198,13 +243,22 @@
 </div>
   
   <script type="module" src="js/app.js"></script>
-
+  
 </body>
 <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./js/service-worker.js")
-      .then(() => console.log("Service Worker registrado"))
-      .catch(err => console.error("Error al registrar SW:", err));
+  // Script temporal para probar modo oscuro
+document.getElementById('btnPruebaTema').addEventListener('click', function() {
+  const html = document.documentElement;
+  const temaActual = html.getAttribute('data-theme');
+  
+  if (temaActual === 'dark') {
+    html.removeAttribute('data-theme');
+    this.textContent = '🌙 Probar Modo Oscuro';
+  } else {
+    html.setAttribute('data-theme', 'dark');
+    this.textContent = '☀️ Volver a Modo Claro';
   }
+});
+
 </script>
 </html>
