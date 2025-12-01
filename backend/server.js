@@ -5,9 +5,7 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import gastosRoutes from "./routes/gastos.js";
-//import notificacionesRoutes from "./routes/notificaciones.js";
 import presupuestoRoutes from "./routes/presupuestos.js";
-import webpush from 'web-push';
 import { routerNotificaciones } from "./routes/notificaciones.js";
 
 dotenv.config(); // Cargar variables del archivo .env
@@ -32,14 +30,6 @@ if (!mongoURI) {
   process.exit(1);
 }
 
-webpush.setVapidDetails(
-  "mailto:tu-correo@example.com",
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
-);
-
-const subscriptions = [];
-
 mongoose
   .connect(mongoURI)
   .then(() => console.log("Conectado a MongoDB Atlas"))
@@ -48,7 +38,7 @@ mongoose
 // Rutas API
 app.use("/api/gastos", gastosRoutes);
 app.use("/api/presupuestos", presupuestoRoutes);
-//app.use("/api/notificaciones", routerNotificaciones);
+app.use("/api/notificaciones", routerNotificaciones);
 
 // Puerto dinámico (Render asigna uno automáticamente)
 const PORT = process.env.PORT || 5000;
