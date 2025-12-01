@@ -5,7 +5,6 @@ import { guardarOffline, obtenerOffline, limpiarOffline } from "./db.js";
 const LS_OFFLINE_KEY = "gastosOfflinePendientes";
 
 //const API_URL = "http://localhost:3000/api/gastos";
-//const API_URL = "/api/gastos";
 //const API_PRESUPUESTOS = "/api/presupuestos";
 //const API_AUTH_LOGIN = "/api/auth/login";
 
@@ -18,8 +17,10 @@ const API_BASE_URL = window.location.hostname.includes("localhost")
   : "https://aplicacionpwa.onrender.com";
 
 const API_URL = `${API_BASE_URL}/api/gastos`;
-const API_PRESUPUESTOS = `${API_BASE_URL}/api/presupuestos`;
-const API_AUTH_LOGIN = `${API_BASE_URL}/api/auth/login`;
+//const API_PRESUPUESTOS = `${API_BASE_URL}/api/presupuestos`;
+const API_PRESUPUESTOS = "/api/presupuestos";
+const API_AUTH_LOGIN = "/api/auth/login";
+//const API_AUTH_LOGIN = `${API_BASE_URL}/api/auth/login`;
 
 const form = document.getElementById("formGasto");
 const popup = document.getElementById("popup");
@@ -170,7 +171,6 @@ categoriaSelect.addEventListener("change", () => {
     frecuenciaSelect.value = "";
   }
 });
-
 
 // ---------- PINTAR SOLO LA TABLA DE GASTOS ----------
 function pintarTabla(gastos) {
@@ -375,13 +375,6 @@ function mostrarRecurrentes(gastos) {
     tabla.appendChild(fila);
   });
 }
-
-
-//const respuesta = await fetch(API_URL);
-//const datos = await respuesta.json();
-// mostrarGastos(datos) ya la tienes
-//inicializarFiltros(datos, mostrarGastos);
-
 
 async function inicializarGraficas() {
   try {
@@ -683,7 +676,7 @@ window.eliminarGasto = async (id) => {
     });
 
     // quitar de la lista en memoria
-    gastosGlobal = gastosGlobal.filter(g => g._id !== id);
+    gastosGlobal = gastosGlobal.filter(g => g._id === id ? false : true);
     window.gastosGlobal = gastosGlobal;
     pintarTabla(gastosGlobal);
 
@@ -708,7 +701,8 @@ window.eliminarGasto = async (id) => {
       showConfirmButton: false
     });
 
-    mostrarGastos(); // refrescar tabla
+    // recargar tabla desde el backend
+    mostrarGastos();
   } catch (error) {
     console.error("Error al eliminar registro:", error);
     Swal.fire({
@@ -718,6 +712,7 @@ window.eliminarGasto = async (id) => {
     });
   }
 };
+
 
 function revisarPagosProximos(gastos) {
   const hoy = new Date();
@@ -757,14 +752,6 @@ function revisarPagosProximos(gastos) {
     confirmButtonText: "Entendido",
   });
 }
-
-/*navigator.serviceWorker.ready.then(reg => {
-  reg.showNotification("FinTrack", {
-    body: "¡Gracias por volver con nosotros!",
-    icon: "../icons/FinTrack-icon.png",
-  });
-});*/
-
 
 // --------- PRESUPUESTO MENSUAL ---------
 const presupuestoResumen = document.getElementById("presupuestoResumen");
@@ -1158,8 +1145,6 @@ async function sincronizarPendientes() {
     console.error("Error al sincronizar pendientes:", err);
   }
 }
-
-
 
 // Ejecutar cuando cargue la página
 //mostrarGastos();
