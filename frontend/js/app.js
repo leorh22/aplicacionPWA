@@ -13,14 +13,14 @@ const LS_OFFLINE_KEY = "gastosOfflinePendientes";
   : "https://aplicacionpwa.onrender.com/api/gastos";*/
 
 const API_BASE_URL = window.location.hostname.includes("localhost")
-  ? "http://localhost:3000"
-  : "https://aplicacionpwa.onrender.com";
+  ? "http://localhost:3000"                // backend local
+  : "https://aplicacionpwa.onrender.com";  // backend en Render
 
 const API_URL = `${API_BASE_URL}/api/gastos`;
-//const API_PRESUPUESTOS = "/api/presupuestos";
-//const API_AUTH_LOGIN = "/api/auth/login";
 const API_PRESUPUESTOS = `${API_BASE_URL}/api/presupuestos`;
 const API_AUTH_LOGIN = `${API_BASE_URL}/api/auth/login`;
+//const API_PRESUPUESTOS = "/api/presupuestos";
+//const API_AUTH_LOGIN = "/api/auth/login";
 
 const form = document.getElementById("formGasto");
 const popup = document.getElementById("popup");
