@@ -7,6 +7,8 @@ const LS_OFFLINE_KEY = "gastosOfflinePendientes";
 //const API_URL = "http://localhost:3000/api/gastos";
 //const API_URL = "/api/gastos";
 //const API_PRESUPUESTOS = "/api/presupuestos";
+//const API_AUTH_LOGIN = "/api/auth/login";
+
 /*const API_URL = window.location.hostname.includes("localhost")
   ? "http://localhost:3000/api/gastos"
   : "https://aplicacionpwa.onrender.com/api/gastos";*/
@@ -17,6 +19,7 @@ const API_BASE_URL = window.location.hostname.includes("localhost")
 
 const API_URL = `${API_BASE_URL}/api/gastos`;
 const API_PRESUPUESTOS = `${API_BASE_URL}/api/presupuestos`;
+const API_AUTH_LOGIN = `${API_BASE_URL}/api/auth/login`;
 
 const form = document.getElementById("formGasto");
 const popup = document.getElementById("popup");
@@ -1167,8 +1170,6 @@ const loginEmail = document.getElementById("loginEmail");
 const loginPassword = document.getElementById("loginPassword");
 const loginContainer = document.getElementById("loginContainer");
 const appContainer = document.getElementById("appContainer");
-
-const API_AUTH_LOGIN = "/api/auth/login";
 
 function getToken() {
   return localStorage.getItem("fintrackToken") || null;
