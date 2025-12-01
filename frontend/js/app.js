@@ -1,5 +1,6 @@
 import { graficoPastel, graficoBarras, graficoLinea, graficoIngresos, graficoRadar } from "./graficas.js";
 import { inicializarFiltros } from "./filtros.js";
+import { guardarOffline, obtenerOffline, limpiarOffline } from "./db.js";
 
 const LS_OFFLINE_KEY = "gastosOfflinePendientes";
 
@@ -64,7 +65,7 @@ async function suscribirDesdeFrontend() {
 
     console.log("➡️ Suscripción creada en el navegador:", subscription);
 
-    await fetch("/api/notificaciones/subscribe", {
+    await apiFetch("/api/notificaciones/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(subscription),
@@ -102,9 +103,17 @@ function cargarPendientesLocal() {
   }
 }
 
-function guardarPendienteLocal(gasto) {
+/**
+ * Guarda una operación pendiente para sincronizar luego.
+ * operacion = {
+ *   accion: "crear" | "editar" | "eliminar",
+ *   id?: string,         // solo para editar / eliminar
+ *   gasto?: object       // datos del gasto (para crear / editar)
+ * }
+ */
+function guardarPendienteLocal(operacion) {
   const actuales = cargarPendientesLocal();
-  actuales.push(gasto);
+  actuales.push(operacion);
   localStorage.setItem(LS_OFFLINE_KEY, JSON.stringify(actuales));
 }
 
@@ -188,8 +197,27 @@ window.pintarTabla = pintarTabla;
 
 async function mostrarGastos() {
   try {
-    const respuesta = await fetch(API_URL);
-    if (!respuesta.ok) throw new Error(`Error HTTP: ${respuesta.status}`);
+    const respuesta = await apiFetch(API_URL);
+
+    if (!respuesta.ok) {
+      // Esto nos ayuda a entender qué pasa exactamente
+      const textoError = await respuesta.text().catch(() => "");
+      console.error("Fallo GET /api/gastos:", respuesta.status, textoError);
+
+      // Si es sesión expirada / token malo → regresar al login
+      if (respuesta.status === 401 || respuesta.status === 403) {
+        setToken(null);
+        mostrarLogin();
+        Swal.fire({
+          icon: "warning",
+          title: "Sesión expirada",
+          text: "Vuelve a iniciar sesión para continuar."
+        });
+        return;
+      }
+
+      throw new Error(`Error HTTP: ${respuesta.status}`);
+    }
 
     const gastos = await respuesta.json();
 
@@ -277,7 +305,7 @@ async function revisarSuscripcionesNotificaciones() {
   if (!alertaSubs3DiasEnviada && proximas3Dias.length > 0) {
     alertaSubs3DiasEnviada = true;
     try {
-      await fetch("/api/notificaciones/suscripciones-recordatorio", {
+      await apiFetch("/api/notificaciones/suscripciones-recordatorio", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ proximas3Dias }),
@@ -291,7 +319,7 @@ async function revisarSuscripcionesNotificaciones() {
   if (!alertaSubsHoyEnviada && hoyCobro.length > 0) {
     alertaSubsHoyEnviada = true;
     try {
-      await fetch("/api/notificaciones/suscripciones-recordatorio", {
+      await apiFetch("/api/notificaciones/suscripciones-recordatorio", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hoyCobro }),
@@ -339,16 +367,15 @@ function mostrarRecurrentes(gastos) {
 }
 
 
-const respuesta = await fetch(API_URL);
-const datos = await respuesta.json();
+//const respuesta = await fetch(API_URL);
+//const datos = await respuesta.json();
 // mostrarGastos(datos) ya la tienes
 //inicializarFiltros(datos, mostrarGastos);
 
 
-
 async function inicializarGraficas() {
   try {
-    const respuesta = await fetch(API_URL);
+    const respuesta = await apiFetch(API_URL);
     datosGlobales = await respuesta.json();
 
     // Poblar selector de año
@@ -460,77 +487,6 @@ cancelar.onclick = () => {
   popup.style.display = "none";
 };
 
-/*form.onsubmit = async (e) => {
-  e.preventDefault();
-
-  // Obtener valores del formulario
-  const fechaBase = new Date(document.getElementById("fecha").value);
-  const frecuencia = form.frecuencia ? form.frecuencia.value : "";
-
-  // Calcular la próxima fecha de pago (fechaRenovacion)
-  let fechaRenovacion = null;
-  if (frecuencia) {
-    fechaRenovacion = new Date(fechaBase);
-    if (frecuencia === "Semanal") fechaRenovacion.setDate(fechaBase.getDate() + 7);
-    if (frecuencia === "Mensual") fechaRenovacion.setMonth(fechaBase.getMonth() + 1);
-    if (frecuencia === "Anual") fechaRenovacion.setFullYear(fechaBase.getFullYear() + 1);
-  }
-
-  const nuevoGasto = {
-    tipo: tipoSelect.value,
-    categoria: categoriaSelect.value,
-    descripcion: document.getElementById("descripcion").value,
-    monto: parseFloat(document.getElementById("monto").value),
-    fecha: document.getElementById("fecha").value,
-    frecuencia: frecuencia,
-    fechaRenovacion: fechaRenovacion ? fechaRenovacion.toISOString() : null
-  };
-
-  try {
-    let respuesta;
-    if (editando) {
-      // PATCH para editar
-      respuesta = await fetch(`${API_URL}/${gastoId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nuevoGasto)
-      });
-    } else {
-      // POST para agregar
-      respuesta = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nuevoGasto)
-      });
-    }
-
-    if (!respuesta.ok) throw new Error("Error al guardar");
-
-    Swal.fire({
-      icon: "success",
-      title: editando ? "Registro actualizado" : "Registro agregado",
-      timer: 1500,
-      showConfirmButton: false
-    });
-
-    popup.style.display = "none";
-    mostrarGastos(); // recargar tabla
-
-  } catch (error) {
-    console.warn("Sin conexión: guardando offline...", error);
-    await guardarOffline(nuevoGasto);
-
-    Swal.fire({
-      icon: "info",
-      title: "Guardado sin internet",
-      text: "Se sincronizará automáticamente cuando vuelvas a estar en línea"
-    });
-
-    popup.style.display = "none";
-    pintarTabla([...gastosGlobal, nuevoGasto]); // mostrarlo en la tabla aunque esté offline
-  }
-}; */
-
 form.onsubmit = async (e) => {
   e.preventDefault();
 
@@ -557,10 +513,36 @@ form.onsubmit = async (e) => {
     fechaRenovacion: fechaRenovacion ? fechaRenovacion.toISOString() : null
   };
 
-  // 1) SI NO HAY INTERNET: no intentamos ni el fetch → guardamos en localStorage
+  // 1) SIN INTERNET → Guardar operación pendiente (crear / editar)
   if (!navigator.onLine) {
-    console.warn("Sin conexión: guardando en localStorage...");
-    guardarPendienteLocal(nuevoGasto);
+    console.warn("Sin conexión: guardando operación pendiente en localStorage...");
+
+    if (editando && gastoId) {
+      // operación de edición offline
+      guardarPendienteLocal({
+        accion: "editar",
+        id: gastoId,
+        gasto: nuevoGasto
+      });
+
+      // Actualizar en memoria para que el usuario vea el cambio
+      const idx = gastosGlobal.findIndex(g => g._id === gastoId);
+      if (idx !== -1) {
+        gastosGlobal[idx] = { ...gastosGlobal[idx], ...nuevoGasto };
+      }
+    } else {
+      // operación de creación offline
+      guardarPendienteLocal({
+        accion: "crear",
+        gasto: nuevoGasto
+      });
+
+      // Lo añadimos a la lista en memoria (sin _id, pero se corregirá al sincronizar)
+      gastosGlobal.push(nuevoGasto);
+    }
+
+    window.gastosGlobal = gastosGlobal;
+    pintarTabla(gastosGlobal);
 
     Swal.fire({
       icon: "info",
@@ -569,21 +551,20 @@ form.onsubmit = async (e) => {
     });
 
     popup.style.display = "none";
-    pintarTabla([...gastosGlobal, nuevoGasto]); // lo mostramos en la tabla
     return;
   }
 
-  // 2) SI HAY INTERNET: intentamos guardar en la API
+  // 2) CON INTERNET → Intentamos guardar en la API
   try {
     let respuesta;
-    if (editando) {
-      respuesta = await fetch(`${API_URL}/${gastoId}`, {
+    if (editando && gastoId) {
+      respuesta = await apiFetch(`${API_URL}/${gastoId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(nuevoGasto)
       });
     } else {
-      respuesta = await fetch(API_URL, {
+      respuesta = await apiFetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(nuevoGasto)
@@ -603,8 +584,30 @@ form.onsubmit = async (e) => {
     mostrarGastos();
 
   } catch (error) {
-    console.warn("Falló el guardado online, se guardará offline:", error);
-    guardarPendienteLocal(nuevoGasto);
+    console.warn("Falló el guardado online, se guardará como operación pendiente:", error);
+
+    if (editando && gastoId) {
+      guardarPendienteLocal({
+        accion: "editar",
+        id: gastoId,
+        gasto: nuevoGasto
+      });
+
+      const idx = gastosGlobal.findIndex(g => g._id === gastoId);
+      if (idx !== -1) {
+        gastosGlobal[idx] = { ...gastosGlobal[idx], ...nuevoGasto };
+      }
+    } else {
+      guardarPendienteLocal({
+        accion: "crear",
+        gasto: nuevoGasto
+      });
+
+      gastosGlobal.push(nuevoGasto);
+    }
+
+    window.gastosGlobal = gastosGlobal;
+    pintarTabla(gastosGlobal);
 
     Swal.fire({
       icon: "info",
@@ -613,13 +616,12 @@ form.onsubmit = async (e) => {
     });
 
     popup.style.display = "none";
-    pintarTabla([...gastosGlobal, nuevoGasto]);
   }
 };
 
 window.editarGasto = async (id) => {
   try {
-    const res = await fetch(API_URL);
+    const res = await apiFetch(API_URL);
     const datos = await res.json();
     const gasto = datos.find(g => g._id === id);
     if (!gasto) return;
@@ -663,8 +665,30 @@ window.eliminarGasto = async (id) => {
 
   if (!confirmacion.isConfirmed) return;
 
+  // SIN INTERNET → marcar eliminación pendiente y actualizar tabla local
+  if (!navigator.onLine) {
+    guardarPendienteLocal({
+      accion: "eliminar",
+      id
+    });
+
+    // quitar de la lista en memoria
+    gastosGlobal = gastosGlobal.filter(g => g._id !== id);
+    window.gastosGlobal = gastosGlobal;
+    pintarTabla(gastosGlobal);
+
+    Swal.fire({
+      icon: "info",
+      title: "Eliminado sin internet",
+      text: "Se sincronizará automáticamente cuando vuelvas a estar en línea"
+    });
+
+    return;
+  }
+
+  // CON INTERNET → eliminar directamente en la API
   try {
-    const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    const res = await apiFetch(`${API_URL}/${id}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Error al eliminar");
 
     Swal.fire({
@@ -793,7 +817,7 @@ formPresupuesto?.addEventListener("submit", async (e) => {
   }
 
   try {
-    const respuesta = await fetch(API_PRESUPUESTOS, {
+    const respuesta = await apiFetch(API_PRESUPUESTOS, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ categoria, monto, mes, año })
@@ -828,7 +852,7 @@ async function cargarPresupuesto() {
     const mes = hoy.getMonth() + 1;
     const año = hoy.getFullYear();
 
-    const res = await fetch(`${API_PRESUPUESTOS}?mes=${mes}&anio=${año}`);
+    const res = await apiFetch(`${API_PRESUPUESTOS}?mes=${mes}&anio=${año}`);
     if (!res.ok) throw new Error("Error al obtener presupuesto");
     const presupuestos = await res.json();
 
@@ -932,7 +956,7 @@ async function cargarPresupuesto() {
       alertaPresupuestoEnviada = true;
 
       try {
-        await fetch("/api/notificaciones/presupuesto-superado", {
+        await apiFetch("/api/notificaciones/presupuesto-superado", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ excedidos })
@@ -944,7 +968,7 @@ async function cargarPresupuesto() {
 
     if (avisosAvance.length > 0 && navigator.onLine) {
       try {
-        await fetch("/api/notificaciones/presupuesto-avance", {
+        await apiFetch("/api/notificaciones/presupuesto-avance", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ avisosAvance })
@@ -1055,11 +1079,11 @@ if (btnExportExcel) {
 
 async function sincronizarConServidor() {
   const offline = await obtenerOffline();
-  if (offline.length === 0) return;
+  if (!offline.length) return;
 
   try {
     for (const gasto of offline) {
-      await fetch(API_URL, {
+      await apiFetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(gasto)
@@ -1079,20 +1103,35 @@ async function sincronizarConServidor() {
   }
 }
 
+
 // Detectar reconexión
 window.addEventListener("online", sincronizarConServidor);
+// Al volver la conexión o al cargar la página, intentamos sincronizar
+window.addEventListener("online", sincronizarPendientes);
 
 async function sincronizarPendientes() {
   const pendientes = cargarPendientesLocal();
   if (!pendientes.length || !navigator.onLine) return;
 
   try {
-    for (const gasto of pendientes) {
-      await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(gasto)
-      });
+    for (const op of pendientes) {
+      if (op.accion === "crear" && op.gasto) {
+        await apiFetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(op.gasto)
+        });
+      } else if (op.accion === "editar" && op.id && op.gasto) {
+        await apiFetch(`${API_URL}/${op.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(op.gasto)
+        });
+      } else if (op.accion === "eliminar" && op.id) {
+        await apiFetch(`${API_URL}/${op.id}`, {
+          method: "DELETE"
+        });
+      }
     }
 
     limpiarPendientesLocal();
@@ -1100,19 +1139,128 @@ async function sincronizarPendientes() {
     Swal.fire({
       icon: "success",
       title: "Sincronización completada",
-      text: "Los registros guardados sin internet ya fueron sincronizados."
+      text: "Los cambios realizados sin internet ya fueron sincronizados."
     });
 
-    mostrarGastos(); // recargar desde el backend
+    // Recargar datos desde el backend para quedar consistentes
+    mostrarGastos();
   } catch (err) {
     console.error("Error al sincronizar pendientes:", err);
   }
 }
 
-// Al volver la conexión o al cargar la página, intentamos sincronizar
-window.addEventListener("online", sincronizarPendientes);
-window.addEventListener("load", sincronizarPendientes);
+
 
 // Ejecutar cuando cargue la página
-mostrarGastos();
+//mostrarGastos();
 
+// --------- LOGIN CON BACKEND ---------
+const loginForm = document.getElementById("loginForm");
+const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
+const loginContainer = document.getElementById("loginContainer");
+const appContainer = document.getElementById("appContainer");
+
+const API_AUTH_LOGIN = "/api/auth/login";
+
+function getToken() {
+  return localStorage.getItem("fintrackToken") || null;
+}
+
+function setToken(token) {
+  if (token) {
+    localStorage.setItem("fintrackToken", token);
+  } else {
+    localStorage.removeItem("fintrackToken");
+  }
+}
+
+// Helper para añadir Authorization a todos los fetch
+async function apiFetch(url, options = {}) {
+  const token = getToken();
+  const headers = options.headers || {};
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return fetch(url, { ...options, headers });
+}
+
+function mostrarApp() {
+  if (loginContainer) loginContainer.style.display = "none";
+  if (appContainer) appContainer.style.display = "block";
+
+  // aquí se dispara la carga de datos de la app
+  mostrarGastos();
+}
+
+function mostrarLogin() {
+  if (loginContainer) loginContainer.style.display = "flex";
+  if (appContainer) appContainer.style.display = "none";
+}
+
+function comprobarSesion() {
+  const token = getToken();
+  if (token) {
+    mostrarApp();
+  } else {
+    mostrarLogin();
+  }
+}
+
+if (loginForm) {
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = loginEmail.value.trim();
+    const password = loginPassword.value.trim();
+
+    try {
+      const res = await fetch(API_AUTH_LOGIN, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Error al iniciar sesión");
+      }
+
+      const data = await res.json();
+      setToken(data.token);
+      Swal.fire({
+        icon: "success",
+        title: "Sesión iniciada",
+        timer: 1500,
+        showConfirmButton: false
+      });
+
+      mostrarApp();
+    } catch (err) {
+      console.error(err);
+      Swal.fire({
+        icon: "error",
+        title: "No se pudo iniciar sesión",
+        text: err.message || "Verifica tus credenciales"
+      });
+    }
+  });
+}
+
+// Si quieres un botón de cerrar sesión en la UI:
+// <button id="btnLogout">Cerrar sesión</button>
+const btnLogout = document.getElementById("btnLogout");
+if (btnLogout) {
+  btnLogout.addEventListener("click", () => {
+    setToken(null);
+    mostrarLogin();
+  });
+}
+
+// Al cargar la página: primero revisar sesión, luego intentar sincronizar offline
+window.addEventListener("load", () => {
+  comprobarSesion();       // Si hay token, muestra la app y llama a mostrarGastos()
+  sincronizarPendientes(); // Si había registros sin internet, intenta mandarlos
+});

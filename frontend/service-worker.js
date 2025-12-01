@@ -40,21 +40,40 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+async function apiFetch(url, options = {}) {
+  const token = getToken();
+  const headers = options.headers || {};
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return fetch(url, { ...options, headers });
+}
+
 // FETCH: manejar peticiones
 self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  const url = new URL(req.url);
+  const url = new URL(event.request.url);
 
-  // 1) API de gastos: estrategia "network first, cache fallback"
-  if (url.pathname.startsWith("/api/gastos") && req.method === "GET") {
-    event.respondWith(networkFirstForGastos(req));
-    return;
+  // 👉 Si es una petición a /api/, NO la tocamos
+  if (url.pathname.startsWith("/api/")) {
+    return; // Dejar que el navegador la maneje normalmente
   }
 
-  // 2) Navegación y estáticos: estrategia "cache first, network fallback"
-  if (req.method === "GET") {
-    event.respondWith(cacheFirst(req));
-  }
+  // Resto de archivos estáticos sí se cachean
+  event.respondWith(
+    caches.match(event.request).then((cacheRes) => {
+      return (
+        cacheRes ||
+        fetch(event.request).then((fetchRes) => {
+          return caches.open("fintrack-cache-v1").then((cache) => {
+            cache.put(event.request, fetchRes.clone());
+            return fetchRes;
+          });
+        })
+      );
+    })
+  );
 });
 
 self.addEventListener("push", (event) => {

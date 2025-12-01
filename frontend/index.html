@@ -5,9 +5,9 @@
   <title>FinTrack</title>
 
   <!-- PWA -->
-   <link rel="manifest" href="manifest.json">
-   <meta name="theme-color" content="#007bff">
-   <link rel="icon" href="icons/Alternative-Icon.png" type="image/png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#007bff">
+  <link rel="icon" href="icons/Alternative-Icon.png" type="image/png">
 
   <!-- Estilos -->
   <link rel="stylesheet" href="./css/style.css" />
@@ -17,248 +17,276 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
-  <header style="background: #007bff; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
-    <img src="icons/no-bg.png" alt="imagen logo" style="height: 60px;">
-    <button id="btnPruebaTema" style="margin-right: 10px; padding: 8px 12px; border: none; border-radius: 5px; background: #6c757d; color: white;">
-      🌙 Probar Modo Oscuro
-    </button>
-    <button id="btnAgregar">Agregar registro</button>
-  </header>
 
-<section id="presupuestoSection">
-  <div class="contenedor-presupuesto">
-    <div class="info-presupuesto">
-      <h3>Presupuesto mensual</h3>
-      <p id="presupuestoResumen" class="sin-presupuesto">
-        Aún no has definido un presupuesto para este mes.
-      </p>
-    </div>
-    <div class="grupo-acciones">
-      <button id="btnAgregarPresupuesto">Definir / Editar presupuesto</button>
-      <div id="accionesTabla">
-        <button id="btnExportCSV">Exportar CSV</button>
-        <button id="btnExportExcel">Exportar Excel</button>
-      </div>
-    </div>
-  </div>
-</section>
+  <!-- LOGIN -->
+  <div id="loginContainer" class="login-wrapper">
+    <form id="loginForm" class="login-card">
+      <h2>FinTrack</h2>
+      <p>Inicia sesión para continuar</p>
 
-  <main style="padding: 1rem">
-  <div id="filtros">
-  <select id="filtroTipo">
-    <option value="">Todos los tipos</option>
-    <option value="Gasto">Gasto</option>
-    <option value="Ingreso">Ingreso</option>
-  </select>
+      <label for="loginEmail">Correo</label>
+      <input type="email" id="loginEmail" required />
 
-  <select id="filtroCategoria">
-    <option value="">Todas las categorías</option>
-  </select>
+      <label for="loginPassword">Contraseña</label>
+      <input type="password" id="loginPassword" required />
 
-  <input type="date" id="filtroDesde">
-  <input type="date" id="filtroHasta">
-
-  <input type="text" id="filtroBusqueda" placeholder="Buscar descripción...">
-
-  <button id="limpiarFiltros">Limpiar</button>
-
-</div>
-    <table border="1" cellpadding="6" id="tablaGastos">
-      <thead>
-        <tr style="text-align: center;">
-          <th>#</th>
-          <th>Descripción</th>
-          <th>Tipo</th>
-          <th>Categoría</th>
-          <th>Monto</th>
-          <th>Fecha</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </main>
-
-<section id="recurrentesSection" style="margin-top: 2rem;">
-  <h3>Pagos Recurrentes</h3>
-  <table id="tablaRecurrentes" border="1" cellpadding="6" style="width:100%;">
-    <thead>
-      <tr style="text-align: center;">
-        <th>#</th>
-        <th>Descripción</th>
-        <th>Categoría</th>
-        <th>Monto</th>
-        <th>Frecuencia</th>
-        <th>Próximo pago</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</section>
-
-  <!-- Popup -->
-  <div id="popup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
-      background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
-    <div style="background:white; padding:1rem; border-radius:6px; width:300px;">
-      <h3 id="tituloPopup">Agregar registro</h3>
-      <form id="formGasto">
-  <input type="hidden" id="gastoId">
-
-  <label>Tipo:</label><br>
-  <select id="tipo" required>
-    <option value="">Selecciona tipo</option>
-    <option value="Gasto">Gasto</option>
-    <option value="Ingreso">Ingreso</option>
-  </select><br><br>
-
-  <label>Categoría:</label><br>
-  <select id="categoria" required>
-    <option value="">Selecciona categoría</option>
-  </select><br><br>
-
-  <label>Descripción:</label><br>
-  <input type="text" id="descripcion" required><br><br>
-
-  <label>Monto:</label><br>
-  <input type="number" id="monto" required><br><br>
-
-  <label>Fecha:</label><br>
-  <input type="date" id="fecha" required><br><br>
-
-  <label id="labelFrecuencia" style="display:none;">Frecuencia:</label><br>
-<select id="frecuencia" name="frecuencia" style="display:none;">
-  <option value="">Único</option>
-  <option value="Semanal">Semanal</option>
-  <option value="Mensual">Mensual</option>
-  <option value="Anual">Anual</option>
-</select><br><br>
-
-  <button type="submit">Guardar</button>
-  <button type="button" id="cancelar">Cancelar</button>
-</form>
-    </div>
-  </div>
-
-
-<!-- Popup Presupuesto -->
-<div id="popupPresupuesto">
-  <div>
-    <h3>Configurar presupuesto del mes</h3>
-    <form id="formPresupuesto">
-      <label>Tipo de presupuesto:</label>
-      <select id="presTipo" required>
-        <option value="general">General (todo el mes)</option>
-        <option value="categoria">Por categoría</option>
-      </select>
-
-      <div id="campoCategoriaPresupuesto">
-        <label>Categoría:</label>
-        <input type="text" id="presCategoria" placeholder="Ej. Comida">
-      </div>
-
-      <label>Monto mensual:</label>
-      <input type="number" id="presMonto" min="0" step="0.01" required>
-
-      <button type="submit">Guardar</button>
-      <button type="button" id="cancelarPresupuesto">Cancelar</button>
+      <button type="submit">Entrar</button>
     </form>
   </div>
-</div>
 
-<h2 class="titulo-seccion">Gráficas</h2>
-<div id="grafContainer">
-  <!-- CONTENEDOR SUPERIOR -->
-  <div class="contenedor-superior">
-    <div class="filtro-anual">
-      <label for="filtroAnio">Año:</label>
-      <select id="filtroAnio"></select>
-    </div>
-    <div class="grafica grafica-grande">
-      <div class="grafica-header">
-        <h3>Ingresos vs Gastos</h3>
+  <!-- APP PROTEGIDA -->
+  <div id="appContainer" style="display:none;">
+
+    <header style="background: #007bff; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+      <img src="icons/no-bg.png" alt="imagen logo" style="height: 60px;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button id="btnAgregar">Agregar registro</button>
+        <button id="btnPruebaTema">
+          🌙 Probar Modo Oscuro
+        </button>
+        <!-- Opcional: botón de cerrar sesión, si ya tienes la lógica en app.js -->
+        <button id="btnLogout">
+          Cerrar sesión
+        </button>
       </div>
-      <canvas id="graficaBarras"></canvas>
-    </div>
-    <div class="grafica grafica-derecha">
-      <div class="grafica-header">
-        <h3>Balance Mensual</h3>
+    </header>
+
+    <section id="presupuestoSection">
+      <div class="contenedor-presupuesto">
+        <div class="info-presupuesto">
+          <h3>Presupuesto mensual</h3>
+          <p id="presupuestoResumen" class="sin-presupuesto">
+            Aún no has definido un presupuesto para este mes.
+          </p>
+        </div>
+        <div class="grupo-acciones">
+          <button id="btnAgregarPresupuesto">Definir / Editar presupuesto</button>
+          <div id="accionesTabla">
+            <button id="btnExportCSV">Exportar CSV</button>
+            <button id="btnExportExcel">Exportar Excel</button>
+          </div>
+        </div>
       </div>
-      <canvas id="graficaLinea"></canvas>
-    </div>
-  </div>
+    </section>
 
-  <!-- CONTENEDOR CIRCULARES -->
-  <div class="contenedor-circulares">
-  <!-- GASTOS -->
-   <div class="filtros-circulares">
-      <label for="anioGastos">Año</label>
-      <select id="anioGastos"></select>
-      <label for="mesGastos">Mes</label>
-      <select id="mesGastos"></select>
-    </div>
-  <div class="grafica grafica-izquierda">
-    <div class="grafica-header">
-      <h3>Gastos por Categoría</h3>
-    </div>
-    <canvas id="graficaPie"></canvas>
-  </div>
-
-  <!-- INGRESOS -->
-   <div class="filtros-circulares">
-      <label for="mesIngresos">Año</label>
-      <select id="anioIngresos"></select>
-      <label for="mesIngresos">Mes</label>
-      <select id="mesIngresos"></select>
-    </div>
-  <div class="grafica grafica-izquierda-abajo">
-    <div class="grafica-header">
-      <h3>Ingresos por Categoría</h3>
-    </div>
-    <canvas id="graficaIngresos"></canvas>
-  </div>
-</div>
-
-  <!-- CONTENEDOR RADAR -->
-  <div class="contenedor-radar">
-    <div class="grafica grafica-radar">
-      <div id="filtrosRadar">
-        <label>Tipo:</label>
-        <select id="tipoRadar">
+    <main style="padding: 1rem">
+      <div id="filtros">
+        <select id="filtroTipo">
+          <option value="">Todos los tipos</option>
           <option value="Gasto">Gasto</option>
           <option value="Ingreso">Ingreso</option>
         </select>
 
-        <label>Año 1:</label>
-        <select id="anioRadar1"></select>
-        <label>Mes 1:</label>
-        <select id="mesRadar1"></select>
-        <label>Año 2:</label>
-        <select id="anioRadar2"></select>
-        <label>Mes 2:</label>
-        <select id="mesRadar2"></select>
-      </div>
-      <canvas id="graficaRadar"></canvas>
-    </div>
-  </div>
-</div>
-  
-  <script type="module" src="js/app.js"></script>
-  
-</body>
-<script>
-  // Script temporal para probar modo oscuro
-document.getElementById('btnPruebaTema').addEventListener('click', function() {
-  const html = document.documentElement;
-  const temaActual = html.getAttribute('data-theme');
-  
-  if (temaActual === 'dark') {
-    html.removeAttribute('data-theme');
-    this.textContent = '🌙 Probar Modo Oscuro';
-  } else {
-    html.setAttribute('data-theme', 'dark');
-    this.textContent = '☀️ Volver a Modo Claro';
-  }
-});
+        <select id="filtroCategoria">
+          <option value="">Todas las categorías</option>
+        </select>
 
-</script>
+        <input type="date" id="filtroDesde">
+        <input type="date" id="filtroHasta">
+
+        <input type="text" id="filtroBusqueda" placeholder="Buscar descripción...">
+
+        <button id="limpiarFiltros">Limpiar</button>
+      </div>
+
+      <table border="1" cellpadding="6" id="tablaGastos">
+        <thead>
+          <tr style="text-align: center;">
+            <th>#</th>
+            <th>Descripción</th>
+            <th>Tipo</th>
+            <th>Categoría</th>
+            <th>Monto</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </main>
+
+    <section id="recurrentesSection" style="margin-top: 2rem;">
+      <h3>Pagos Recurrentes</h3>
+      <table id="tablaRecurrentes" border="1" cellpadding="6" style="width:100%;">
+        <thead>
+          <tr style="text-align: center;">
+            <th>#</th>
+            <th>Descripción</th>
+            <th>Categoría</th>
+            <th>Monto</th>
+            <th>Frecuencia</th>
+            <th>Próximo pago</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Popup gasto -->
+    <div id="popup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+        background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+      <div style="background:white; padding:1rem; border-radius:6px; width:300px;">
+        <h3 id="tituloPopup">Agregar registro</h3>
+        <form id="formGasto">
+          <input type="hidden" id="gastoId">
+
+          <label>Tipo:</label><br>
+          <select id="tipo" required>
+            <option value="">Selecciona tipo</option>
+            <option value="Gasto">Gasto</option>
+            <option value="Ingreso">Ingreso</option>
+          </select><br><br>
+
+          <label>Categoría:</label><br>
+          <select id="categoria" required>
+            <option value="">Selecciona categoría</option>
+          </select><br><br>
+
+          <label>Descripción:</label><br>
+          <input type="text" id="descripcion" required><br><br>
+
+          <label>Monto:</label><br>
+          <input type="number" id="monto" required><br><br>
+
+          <label>Fecha:</label><br>
+          <input type="date" id="fecha" required><br><br>
+
+          <label id="labelFrecuencia" style="display:none;">Frecuencia:</label><br>
+          <select id="frecuencia" name="frecuencia" style="display:none;">
+            <option value="">Único</option>
+            <option value="Semanal">Semanal</option>
+            <option value="Mensual">Mensual</option>
+            <option value="Anual">Anual</option>
+          </select><br><br>
+
+          <button type="submit">Guardar</button>
+          <button type="button" id="cancelar">Cancelar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Popup Presupuesto -->
+    <div id="popupPresupuesto">
+      <div>
+        <h3>Configurar presupuesto del mes</h3>
+        <form id="formPresupuesto">
+          <label>Tipo de presupuesto:</label>
+          <select id="presTipo" required>
+            <option value="general">General (todo el mes)</option>
+            <option value="categoria">Por categoría</option>
+          </select>
+
+          <div id="campoCategoriaPresupuesto">
+            <label>Categoría:</label>
+            <input type="text" id="presCategoria" placeholder="Ej. Comida">
+          </div>
+
+          <label>Monto mensual:</label>
+          <input type="number" id="presMonto" min="0" step="0.01" required>
+
+          <button type="submit">Guardar</button>
+          <button type="button" id="cancelarPresupuesto">Cancelar</button>
+        </form>
+      </div>
+    </div>
+
+    <h2 class="titulo-seccion">Gráficas</h2>
+    <div id="grafContainer">
+      <!-- CONTENEDOR SUPERIOR -->
+      <div class="contenedor-superior">
+        <div class="filtro-anual">
+          <label for="filtroAnio">Año:</label>
+          <select id="filtroAnio"></select>
+        </div>
+        <div class="grafica grafica-grande">
+          <div class="grafica-header">
+            <h3>Ingresos vs Gastos</h3>
+          </div>
+          <canvas id="graficaBarras"></canvas>
+        </div>
+        <div class="grafica grafica-derecha">
+          <div class="grafica-header">
+            <h3>Balance Mensual</h3>
+          </div>
+          <canvas id="graficaLinea"></canvas>
+        </div>
+      </div>
+
+      <!-- CONTENEDOR CIRCULARES -->
+      <div class="contenedor-circulares">
+        <!-- GASTOS -->
+        <div class="filtros-circulares">
+          <label for="anioGastos">Año</label>
+          <select id="anioGastos"></select>
+          <label for="mesGastos">Mes</label>
+          <select id="mesGastos"></select>
+        </div>
+        <div class="grafica grafica-izquierda">
+          <div class="grafica-header">
+            <h3>Gastos por Categoría</h3>
+          </div>
+          <canvas id="graficaPie"></canvas>
+        </div>
+
+        <!-- INGRESOS -->
+        <div class="filtros-circulares">
+          <label for="anioIngresos">Año</label>
+          <select id="anioIngresos"></select>
+          <label for="mesIngresos">Mes</label>
+          <select id="mesIngresos"></select>
+        </div>
+        <div class="grafica grafica-izquierda-abajo">
+          <div class="grafica-header">
+            <h3>Ingresos por Categoría</h3>
+          </div>
+          <canvas id="graficaIngresos"></canvas>
+        </div>
+      </div>
+
+      <!-- CONTENEDOR RADAR -->
+      <div class="contenedor-radar">
+        <div class="grafica grafica-radar">
+          <div id="filtrosRadar">
+            <label>Tipo:</label>
+            <select id="tipoRadar">
+              <option value="Gasto">Gasto</option>
+              <option value="Ingreso">Ingreso</option>
+            </select>
+
+            <label>Año 1:</label>
+            <select id="anioRadar1"></select>
+            <label>Mes 1:</label>
+            <select id="mesRadar1"></select>
+            <label>Año 2:</label>
+            <select id="anioRadar2"></select>
+            <label>Mes 2:</label>
+            <select id="mesRadar2"></select>
+          </div>
+          <canvas id="graficaRadar"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- fin appContainer -->
+
+  <!-- Scripts principales -->
+  <script type="module" src="js/app.js"></script>
+
+  <!-- Script modo oscuro -->
+  <script>
+    document.getElementById('btnPruebaTema').addEventListener('click', function() {
+      const html = document.documentElement;
+      const temaActual = html.getAttribute('data-theme');
+
+      if (temaActual === 'dark') {
+        html.removeAttribute('data-theme');
+        this.textContent = '🌙 Probar Modo Oscuro';
+      } else {
+        html.setAttribute('data-theme', 'dark');
+        this.textContent = '☀️ Volver a Modo Claro';
+      }
+    });
+  </script>
+
+</body>
 </html>

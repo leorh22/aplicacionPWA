@@ -607,6 +607,86 @@ header h2::before {
   backdrop-filter: blur(10px);
 }
 
+#btnPruebaTema {
+  background: linear-gradient(135deg, #2b2a2a 0%, #3b3737 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+#btnPruebaTema::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+#btnPruebaTema:hover::before {
+  left: 100%;
+}
+
+#btnPruebaTema:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4);
+}
+
+#btnPruebaTema:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+#btnLogout {
+  background: linear-gradient(135deg, #a70e0e 0%, #e13030 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+#btnLogout::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+#btnLogout:hover::before {
+  left: 100%;
+}
+
+#btnLogout:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4);
+}
+
+#btnLogout:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
 #btnAgregar {
   background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
   color: white;
@@ -1391,5 +1471,489 @@ header::after {
   #btnExportCSV,
   #btnExportExcel {
     width: 100%;
+  }
+}
+
+/* ===== DISEÑO MODERNO PARA LOGIN ===== */
+.login-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #66afea 0%, #0c2491 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 9999;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 40px 30px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: loginSlideUp 0.6s ease-out;
+}
+
+@keyframes loginSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-card h2 {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.login-card h2::before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+}
+
+.login-card > p {
+  color: #6c757d;
+  margin: 0 0 30px 0;
+  font-size: 0.95rem;
+}
+
+.login-card label {
+  display: block;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #495057;
+  margin: 0 0 6px 0;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  font-size: 1rem;
+  background: white;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.login-card input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.login-card input:hover {
+  border-color: #007bff;
+}
+
+.login-card button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.login-card button:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+}
+
+.login-card button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(0, 123, 255, 0.3);
+}
+
+/* Efectos de partículas en el fondo (opcional) */
+.login-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 2px, transparent 0),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 2px, transparent 0);
+  background-size: 300px 300px;
+  animation: float 20s infinite linear;
+}
+
+@keyframes float {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-300px, 300px); }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .login-wrapper {
+    padding: 15px;
+  }
+  
+  .login-card {
+    padding: 30px 20px;
+    border-radius: 16px;
+  }
+  
+  .login-card h2 {
+    font-size: 1.8rem;
+  }
+  
+  .login-card h2::before {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .login-card input {
+    padding: 12px 14px;
+  }
+  
+  .login-card button {
+    padding: 13px;
+  }
+}
+
+@media (max-width: 320px) {
+  .login-card {
+    padding: 25px 15px;
+  }
+  
+  .login-card h2 {
+    font-size: 1.6rem;
+  }
+}
+
+/* ===== CONTENEDOR CIRCULARES RESPONSIVO ===== */
+.contenedor-circulares {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border: 1px solid #dee2e6;
+  min-height: 650px;
+}
+
+/* Grupo de gráfica circular */
+.grupo-circular {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 1;
+  min-height: 300px;
+}
+
+/* Filtros responsivos */
+.filtros-circulares {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 5px;
+}
+
+.filtros-circulares label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #495057;
+  margin: 0;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filtros-circulares select {
+  padding: 6px 8px;
+  border: 1px solid #d1d5e0;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.8rem;
+  color: #495057;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+/* Gráficas circulares */
+.contenedor-circulares .grafica {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e9ecef;
+  flex: 1;
+  min-height: 320px;
+  height: 320px;
+}
+
+/* Canvas para móviles */
+.contenedor-circulares .grafica canvas {
+  width: 100% !important;
+  height: calc(100% - 40px) !important;
+  min-height: 250px;
+  max-height: 280px;
+  flex: 1;
+}
+
+/* Encabezado responsivo */
+.grafica-header h3 {
+  font-size: 1rem !important;
+  margin: 0 0 10px 0;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== RESPONSIVE PARA CELULARES ===== */
+@media (max-width: 768px) {
+  .contenedor-circulares {
+    padding: 15px;
+    gap: 15px;
+    min-height: auto;
+  }
+  
+  .grupo-circular {
+    min-height: 280px;
+  }
+  
+  .contenedor-circulares .grafica {
+    min-height: 280px;
+    height: 280px;
+    padding: 12px;
+  }
+  
+  .filtros-circulares {
+    gap: 6px;
+    padding: 8px;
+  }
+  
+  .filtros-circulares select {
+    min-width: 70px;
+    padding: 5px 6px;
+    font-size: 0.75rem;
+  }
+  
+  .filtros-circulares label {
+    font-size: 0.75rem;
+  }
+  
+  .grafica-header h3 {
+    font-size: 0.9rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .contenedor-circulares {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .grupo-circular {
+    min-height: 250px;
+  }
+  
+  .contenedor-circulares .grafica {
+    min-height: 250px;
+    height: 250px;
+    padding: 10px;
+  }
+  
+  .filtros-circulares {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .filtros-circulares > * {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  
+  .filtros-circulares select {
+    flex: 1;
+    min-width: auto;
+  }
+  
+  .contenedor-circulares .grafica canvas {
+    min-height: 200px;
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 360px) {
+  .contenedor-circulares .grafica {
+    min-height: 230px;
+    height: 230px;
+  }
+  
+  .grafica-header h3 {
+    font-size: 0.85rem !important;
+  }
+}
+
+/* ===== CONTENEDOR SUPERIOR RESPONSIVO ===== */
+.contenedor-superior {
+  display: grid;
+  grid-template-areas: 
+    "filtro ."
+    "barras linea";
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 20px;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border: 1px solid #dee2e6;
+  min-height: 400px;
+}
+
+.filtro-anual {
+  grid-area: filtro;
+  justify-self: start;
+  align-self: start;
+}
+
+.grafica-grande {
+  grid-area: barras;
+}
+
+.grafica-derecha {
+  grid-area: linea;
+}
+
+.contenedor-superior .grafica {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e9ecef;
+  min-height: 350px;
+  height: 350px;
+}
+
+.contenedor-superior .grafica canvas {
+  width: 100% !important;
+  height: calc(100% - 40px) !important;
+  min-height: 280px;
+  flex: 1;
+}
+
+/* ===== RESPONSIVE PARA CELULARES ===== */
+@media (max-width: 1024px) {
+  .contenedor-superior .grafica {
+    min-height: 320px;
+    height: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .contenedor-superior {
+    grid-template-areas: 
+      "filtro"
+      "barras"
+      "linea";
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    padding: 15px;
+    gap: 15px;
+    min-height: auto;
+  }
+  
+  .filtro-anual {
+    justify-self: center;
+    width: 100%;
+    max-width: 250px;
+    margin: 0 auto;
+  }
+  
+  .contenedor-superior .grafica {
+    min-height: 300px;
+    height: 300px;
+    padding: 12px;
+  }
+  
+  .contenedor-superior .grafica canvas {
+    min-height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contenedor-superior {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .contenedor-superior .grafica {
+    min-height: 280px;
+    height: 280px;
+    padding: 10px;
+  }
+  
+  .grafica-header h3 {
+    font-size: 1rem !important;
+  }
+  
+  .filtro-anual {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .contenedor-superior .grafica {
+    min-height: 250px;
+    height: 250px;
+  }
+  
+  .contenedor-superior .grafica canvas {
+    min-height: 200px;
   }
 }
