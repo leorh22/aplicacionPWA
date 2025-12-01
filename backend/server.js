@@ -7,6 +7,8 @@ import { fileURLToPath } from "url";
 import gastosRoutes from "./routes/gastos.js";
 import presupuestoRoutes from "./routes/presupuestos.js";
 import { routerNotificaciones } from "./routes/notificaciones.js";
+import { requireAuth } from "./middlewares/auth.js";
+import authRouter from "./routes/auth.js";
 
 dotenv.config(); // Cargar variables del archivo .env
 
@@ -35,10 +37,12 @@ mongoose
   .then(() => console.log("Conectado a MongoDB Atlas"))
   .catch(err => console.error("Error al conectar a MongoDB:", err));
 
+app.use("/api/auth", authRouter);
+
 // Rutas API
-app.use("/api/gastos", gastosRoutes);
-app.use("/api/presupuestos", presupuestoRoutes);
-app.use("/api/notificaciones", routerNotificaciones);
+app.use("/api/gastos", requireAuth, gastosRoutes);
+app.use("/api/presupuestos", requireAuth, presupuestoRoutes);
+app.use("/api/notificaciones", requireAuth, routerNotificaciones);
 
 // Puerto dinámico (Render asigna uno automáticamente)
 const PORT = process.env.PORT || 5000;
