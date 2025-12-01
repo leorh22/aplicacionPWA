@@ -1,10 +1,13 @@
 import { graficoPastel, graficoBarras, graficoLinea, graficoIngresos, graficoRadar } from "./graficas.js";
 import { inicializarFiltros } from "./filtros.js";
 
-//const API_URL = "http://localhost:3000/api/gastos";
-const API_URL = window.location.hostname.includes("localhost")
+const LS_OFFLINE_KEY = "gastosOfflinePendientes";
+
+const API_URL = "http://localhost:3000/api/gastos";
+/*const API_URL = window.location.hostname.includes("localhost")
   ? "http://localhost:5000/api/gastos"
   : "https://aplicacionpwa.onrender.com/api/gastos";
+*/
 
 const API_PRESUPUESTOS = '/api/presupuestos';
 const form = document.getElementById("formGasto");
@@ -13,6 +16,7 @@ const tituloPopup = document.getElementById("tituloPopup");
 const btnAgregar = document.getElementById("btnAgregar");
 const cancelar = document.getElementById("cancelar");
 const VAPID_PUBLIC_KEY = "BDPYzCO5bWNreov9MkSPmoFdHy2XDv8zN8MzX0TKF2_hJYDlPQKOv1ONBOVvuRAezMpRPd0SCRXz0-wOb6RpM1k";
+
 const alertas = [];
 
 // Elemento <tbody> de la tabla
@@ -24,11 +28,89 @@ let gastosGlobal = [];
 let datosGlobales = []; // Donde almacenarás los datos completos del backend
 window.gastosGlobal = gastosGlobal;
 let filtrosIniciados = false;
+let alertaPresupuestoEnviada = false;
+let alertaSubs3DiasEnviada = false;
+let alertaSubsHoyEnviada = false;
 
 const tipoSelect = document.getElementById("tipo");
 const categoriaSelect = document.getElementById("categoria");
 const frecuenciaSelect = document.getElementById("frecuencia");
 const labelFrecuencia = document.getElementById("labelFrecuencia");
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
+async function suscribirDesdeFrontend() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+
+    const subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+
+    console.log("➡️ Suscripción creada en el navegador:", subscription);
+
+    await fetch("/api/notificaciones/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(subscription),
+    });
+
+    console.log("✅ Suscripción enviada al backend");
+  } catch (err) {
+    console.error("Error al suscribir a push:", err);
+  }
+}
+
+if ("Notification" in window && "serviceWorker" in navigator && "PushManager" in window) {
+  if (Notification.permission === "default") {
+    Notification.requestPermission().then((result) => {
+      console.log("Permiso de notificaciones:", result);
+      if (result === "granted") {
+        suscribirDesdeFrontend();
+      }
+    });
+  } else if (Notification.permission === "granted") {
+    // Si ya habías dado permiso antes, nos suscribimos directo
+    suscribirDesdeFrontend();
+  } else {
+    console.log("Notificaciones bloqueadas por el usuario");
+  }
+}
+
+function cargarPendientesLocal() {
+  try {
+    const data = localStorage.getItem(LS_OFFLINE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    console.error("Error leyendo pendientes de localStorage:", e);
+    return [];
+  }
+}
+
+function guardarPendienteLocal(gasto) {
+  const actuales = cargarPendientesLocal();
+  actuales.push(gasto);
+  localStorage.setItem(LS_OFFLINE_KEY, JSON.stringify(actuales));
+}
+
+function limpiarPendientesLocal() {
+  localStorage.removeItem(LS_OFFLINE_KEY);
+}
 
 // Descarga genérica
 function descargarArchivo(nombreArchivo, contenido, tipoMime) {
@@ -104,71 +186,6 @@ function pintarTabla(gastos) {
 // disponible para filtros.js
 window.pintarTabla = pintarTabla;
 
-/*async function mostrarGastos() {
-  try {
-    const respuesta = await fetch(API_URL);
-    if (!respuesta.ok) throw new Error(`Error HTTP: ${respuesta.status}`);
-
-    const gastos = await respuesta.json();
-    gastosGlobal = gastos; // guardar en global para usar en presupuesto, filtros, etc.
-    
-    // Limpiar tabla
-    tabla.innerHTML = "";
-
-    if (gastos.length === 0) {
-      const filaVacia = document.createElement("tr");
-      // 7 columnas: #, desc, tipo, cat, monto, fecha, acciones
-      filaVacia.innerHTML = `<td colspan="7" style="text-align:center;">No hay registros</td>`;
-      tabla.appendChild(filaVacia);
-
-      if (typeof cargarPresupuesto === "function") {
-        cargarPresupuesto();
-      }
-      return;
-    }
-
-    // Llenar tabla con los datos
-    gastos.forEach((gasto, index) => {
-      const fila = document.createElement("tr");
-      fila.innerHTML = `
-        <td style="text-align: center;">${index + 1}</td>
-        <td>${gasto.descripcion}</td>
-        <td style="text-align: center;">${gasto.tipo}</td>
-        <td style="text-align: center;">${gasto.categoria}</td>
-        <td style="text-align: center;">$${gasto.monto.toFixed(2)}</td>
-        <td style="text-align: center;">${new Date(gasto.fecha).toLocaleDateString("es-MX")}</td>
-        <td style="text-align: center;">
-          <button class="editar" onclick="editarGasto('${gasto._id}')">Editar</button>
-          <button class="eliminar" onclick="eliminarGasto('${gasto._id}')">Eliminar</button>
-        </td>
-      `;
-      tabla.appendChild(fila);
-    });
-
-    if (gastos.length > 0) {
-      graficoPastel(gastos);
-      graficoBarras(gastos);
-      graficoLinea(gastos);
-      graficoIngresos(gastos);
-      graficoRadar(gastos);
-      mostrarRecurrentes(gastos);
-      revisarPagosProximos(gastos);
-
-      if (typeof cargarPresupuesto === "function") {
-        cargarPresupuesto();
-      }
-    }
-
-  } catch (error) {
-    console.error("Error al obtener los gastos:", error);
-    Swal.fire({
-      icon: "error",
-      title: "Error al cargar datos",
-      text: "No se pudieron obtener los registros del servidor."
-    });
-  }
-} */
-
 async function mostrarGastos() {
   try {
     const respuesta = await fetch(API_URL);
@@ -206,6 +223,8 @@ async function mostrarGastos() {
       cargarPresupuesto();
     }
 
+    revisarSuscripcionesNotificaciones();
+    
   } catch (error) {
     console.error("Error al obtener los gastos:", error);
     Swal.fire({
@@ -216,7 +235,72 @@ async function mostrarGastos() {
   }
 }
 
+async function revisarSuscripcionesNotificaciones() {
+  if (!navigator.onLine) return;
+  if (!Array.isArray(gastosGlobal) || gastosGlobal.length === 0) return;
 
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  const proximas3Dias = [];
+  const hoyCobro = [];
+
+  // Buscamos gastos de categoría "Suscripciones" con fecha o fechaRenovacion
+  gastosGlobal.forEach((g) => {
+    if (g.categoria !== "Suscripciones") return;
+
+    const fechaBase = g.fechaRenovacion || g.fecha;
+    if (!fechaBase) return;
+
+    const fechaCobro = new Date(fechaBase);
+    if (isNaN(fechaCobro.getTime())) return;
+
+    fechaCobro.setHours(0, 0, 0, 0);
+
+    const diffMs = fechaCobro - hoy;
+    const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDias === 3) {
+      proximas3Dias.push({
+        descripcion: g.descripcion,
+        fecha: fechaCobro.toISOString(),
+      });
+    } else if (diffDias === 0) {
+      hoyCobro.push({
+        descripcion: g.descripcion,
+        fecha: fechaCobro.toISOString(),
+      });
+    }
+  });
+
+  // En 3 días
+  if (!alertaSubs3DiasEnviada && proximas3Dias.length > 0) {
+    alertaSubs3DiasEnviada = true;
+    try {
+      await fetch("/api/notificaciones/suscripciones-recordatorio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proximas3Dias }),
+      });
+    } catch (err) {
+      console.error("Error enviando notificación de suscripciones (3 días):", err);
+    }
+  }
+
+  // Hoy
+  if (!alertaSubsHoyEnviada && hoyCobro.length > 0) {
+    alertaSubsHoyEnviada = true;
+    try {
+      await fetch("/api/notificaciones/suscripciones-recordatorio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hoyCobro }),
+      });
+    } catch (err) {
+      console.error("Error enviando notificación de suscripciones (hoy):", err);
+    }
+  }
+}
 
 function mostrarRecurrentes(gastos) {
   const tabla = document.querySelector("#tablaRecurrentes tbody");
@@ -376,7 +460,7 @@ cancelar.onclick = () => {
   popup.style.display = "none";
 };
 
-form.onsubmit = async (e) => {
+/*form.onsubmit = async (e) => {
   e.preventDefault();
 
   // Obtener valores del formulario
@@ -433,12 +517,103 @@ form.onsubmit = async (e) => {
     mostrarGastos(); // recargar tabla
 
   } catch (error) {
-    console.error("Error al guardar registro:", error);
+    console.warn("Sin conexión: guardando offline...", error);
+    await guardarOffline(nuevoGasto);
+
     Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "No se pudo guardar el registro."
+      icon: "info",
+      title: "Guardado sin internet",
+      text: "Se sincronizará automáticamente cuando vuelvas a estar en línea"
     });
+
+    popup.style.display = "none";
+    pintarTabla([...gastosGlobal, nuevoGasto]); // mostrarlo en la tabla aunque esté offline
+  }
+}; */
+
+form.onsubmit = async (e) => {
+  e.preventDefault();
+
+  // Obtener valores del formulario
+  const fechaBase = new Date(document.getElementById("fecha").value);
+  const frecuencia = form.frecuencia ? form.frecuencia.value : "";
+
+  // Calcular la próxima fecha de pago (fechaRenovacion)
+  let fechaRenovacion = null;
+  if (frecuencia) {
+    fechaRenovacion = new Date(fechaBase);
+    if (frecuencia === "Semanal") fechaRenovacion.setDate(fechaBase.getDate() + 7);
+    if (frecuencia === "Mensual") fechaRenovacion.setMonth(fechaBase.getMonth() + 1);
+    if (frecuencia === "Anual") fechaRenovacion.setFullYear(fechaBase.getFullYear() + 1);
+  }
+
+  const nuevoGasto = {
+    tipo: tipoSelect.value,
+    categoria: categoriaSelect.value,
+    descripcion: document.getElementById("descripcion").value,
+    monto: parseFloat(document.getElementById("monto").value),
+    fecha: document.getElementById("fecha").value,
+    frecuencia: frecuencia,
+    fechaRenovacion: fechaRenovacion ? fechaRenovacion.toISOString() : null
+  };
+
+  // 1) SI NO HAY INTERNET: no intentamos ni el fetch → guardamos en localStorage
+  if (!navigator.onLine) {
+    console.warn("Sin conexión: guardando en localStorage...");
+    guardarPendienteLocal(nuevoGasto);
+
+    Swal.fire({
+      icon: "info",
+      title: "Guardado sin internet",
+      text: "Se sincronizará automáticamente cuando vuelvas a estar en línea"
+    });
+
+    popup.style.display = "none";
+    pintarTabla([...gastosGlobal, nuevoGasto]); // lo mostramos en la tabla
+    return;
+  }
+
+  // 2) SI HAY INTERNET: intentamos guardar en la API
+  try {
+    let respuesta;
+    if (editando) {
+      respuesta = await fetch(`${API_URL}/${gastoId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevoGasto)
+      });
+    } else {
+      respuesta = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevoGasto)
+      });
+    }
+
+    if (!respuesta.ok) throw new Error("Error al guardar");
+
+    Swal.fire({
+      icon: "success",
+      title: editando ? "Registro actualizado" : "Registro agregado",
+      timer: 1500,
+      showConfirmButton: false
+    });
+
+    popup.style.display = "none";
+    mostrarGastos();
+
+  } catch (error) {
+    console.warn("Falló el guardado online, se guardará offline:", error);
+    guardarPendienteLocal(nuevoGasto);
+
+    Swal.fire({
+      icon: "info",
+      title: "Guardado sin internet",
+      text: "Se sincronizará automáticamente cuando vuelvas a estar en línea"
+    });
+
+    popup.style.display = "none";
+    pintarTabla([...gastosGlobal, nuevoGasto]);
   }
 };
 
@@ -549,12 +724,12 @@ function revisarPagosProximos(gastos) {
   });
 }
 
-navigator.serviceWorker.ready.then(reg => {
+/*navigator.serviceWorker.ready.then(reg => {
   reg.showNotification("FinTrack", {
     body: "¡Gracias por volver con nosotros!",
     icon: "../icons/FinTrack-icon.png",
   });
-});
+});*/
 
 
 // --------- PRESUPUESTO MENSUAL ---------
@@ -669,6 +844,8 @@ async function cargarPresupuesto() {
     let totalGeneral = 0;
     let totalGastadoGeneral = 0;
     const lineas = [];
+    const excedidos = [];
+    const avisosAvance = [];
 
     // Filtramos gastos del mes actual
     const gastosMes = gastos.filter(g => {
@@ -701,6 +878,30 @@ async function cargarPresupuesto() {
         porcentaje >= 80  ? "#e67e22" :
         "#27ae60";
 
+      if (porcentaje >= 100) {
+        excedidos.push({
+          categoria: esGeneral ? "GENERAL" : p.categoria,
+          monto: p.monto,
+          gastado: gastado
+        });
+      }
+
+      if (porcentaje >= 75 && porcentaje < 100) {
+          avisosAvance.push({
+            categoria: esGeneral ? "GENERAL" : p.categoria,
+            porcentaje: 75,
+            gastado,
+            monto: p.monto
+          });
+        } else if (porcentaje >= 50 && porcentaje < 75) {
+          avisosAvance.push({
+            categoria: esGeneral ? "GENERAL" : p.categoria,
+            porcentaje: 50,
+            gastado,
+            monto: p.monto
+          });
+        }
+
       lineas.push(`
       <div style="margin-bottom:6px;">
         <strong>${esGeneral ? "General (todo el mes)" : p.categoria}</strong>: 
@@ -725,6 +926,32 @@ async function cargarPresupuesto() {
         html: `<ul style="text-align:left; padding-left:20px;">${htmlAlertas}</ul>`,
         confirmButtonText: "Revisar gastos",
       });
+    }
+
+    if (!alertaPresupuestoEnviada && excedidos.length > 0 && navigator.onLine) {
+      alertaPresupuestoEnviada = true;
+
+      try {
+        await fetch("/api/notificaciones/presupuesto-superado", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ excedidos })
+        });
+      } catch (err) {
+        console.error("Error enviando notificación de presupuesto:", err);
+      }
+    }
+
+    if (avisosAvance.length > 0 && navigator.onLine) {
+      try {
+        await fetch("/api/notificaciones/presupuesto-avance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ avisosAvance })
+        });
+      } catch (err) {
+        console.error("Error enviando notificación de avance de presupuesto:", err);
+      }
     }
 
     presupuestoResumen.innerHTML = `
@@ -825,6 +1052,66 @@ if (btnExportCSV) {
 if (btnExportExcel) {
   btnExportExcel.addEventListener("click", exportarTablaExcel);
 }
+
+async function sincronizarConServidor() {
+  const offline = await obtenerOffline();
+  if (offline.length === 0) return;
+
+  try {
+    for (const gasto of offline) {
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(gasto)
+      });
+    }
+
+    await limpiarOffline();
+    Swal.fire({
+      icon: "success",
+      title: "Sincronización completada",
+      text: "Tus datos offline ya están guardados en la nube"
+    });
+
+    mostrarGastos(); // recargar tabla desde API
+  } catch (err) {
+    console.error("Error al sincronizar:", err);
+  }
+}
+
+// Detectar reconexión
+window.addEventListener("online", sincronizarConServidor);
+
+async function sincronizarPendientes() {
+  const pendientes = cargarPendientesLocal();
+  if (!pendientes.length || !navigator.onLine) return;
+
+  try {
+    for (const gasto of pendientes) {
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(gasto)
+      });
+    }
+
+    limpiarPendientesLocal();
+
+    Swal.fire({
+      icon: "success",
+      title: "Sincronización completada",
+      text: "Los registros guardados sin internet ya fueron sincronizados."
+    });
+
+    mostrarGastos(); // recargar desde el backend
+  } catch (err) {
+    console.error("Error al sincronizar pendientes:", err);
+  }
+}
+
+// Al volver la conexión o al cargar la página, intentamos sincronizar
+window.addEventListener("online", sincronizarPendientes);
+window.addEventListener("load", sincronizarPendientes);
 
 // Ejecutar cuando cargue la página
 mostrarGastos();

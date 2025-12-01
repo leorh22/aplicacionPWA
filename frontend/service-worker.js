@@ -11,8 +11,6 @@ const STATIC_ASSETS = [
   "/js/graficas.js",
   "/js/filtros.js",
   "/manifest.json",
-  //"/icon-192.png",
-  //"/icon-512.png",
   // Si mantienes CDNs:
   "https://cdn.jsdelivr.net/npm/chart.js",
   "https://cdn.jsdelivr.net/npm/sweetalert2@11"
@@ -61,19 +59,20 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("push", (event) => {
   let data = {};
+
   if (event.data) {
     try {
       data = event.data.json();
-    } catch {
-      data = { title: "Notificación", body: event.data.text() };
+    } catch (e) {
+      data = { body: event.data.text() };
     }
   }
 
   const title = data.title || "FinTrack";
   const options = {
     body: data.body || "Tienes una nueva notificación",
-    icon: "../icons/FinTrack-icon.png",
-    badge: "../icons/FinTrack-icon.png",
+    icon: "/icons/no-bg.png",
+    badge: "/icons/no-bg.png",
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
