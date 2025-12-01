@@ -17,10 +17,10 @@ const API_BASE_URL = window.location.hostname.includes("localhost")
   : "https://aplicacionpwa.onrender.com";
 
 const API_URL = `${API_BASE_URL}/api/gastos`;
-//const API_PRESUPUESTOS = `${API_BASE_URL}/api/presupuestos`;
-const API_PRESUPUESTOS = "/api/presupuestos";
-const API_AUTH_LOGIN = "/api/auth/login";
-//const API_AUTH_LOGIN = `${API_BASE_URL}/api/auth/login`;
+//const API_PRESUPUESTOS = "/api/presupuestos";
+//const API_AUTH_LOGIN = "/api/auth/login";
+const API_PRESUPUESTOS = `${API_BASE_URL}/api/presupuestos`;
+const API_AUTH_LOGIN = `${API_BASE_URL}/api/auth/login`;
 
 const form = document.getElementById("formGasto");
 const popup = document.getElementById("popup");
