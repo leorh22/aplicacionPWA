@@ -4,11 +4,10 @@ import { guardarOffline, obtenerOffline, limpiarOffline } from "./db.js";
 
 const LS_OFFLINE_KEY = "gastosOfflinePendientes";
 
-const API_URL = "http://localhost:3000/api/gastos";
-/*const API_URL = window.location.hostname.includes("localhost")
+//const API_URL = "http://localhost:3000/api/gastos";
+const API_URL = window.location.hostname.includes("localhost")
   ? "http://localhost:5000/api/gastos"
   : "https://aplicacionpwa.onrender.com/api/gastos";
-*/
 
 const API_PRESUPUESTOS = '/api/presupuestos';
 const form = document.getElementById("formGasto");
