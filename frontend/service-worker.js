@@ -1,5 +1,5 @@
 // Nombre de caches
-const STATIC_CACHE = "gastos-static-v1";
+const STATIC_CACHE = "gastos-static-v2";
 const API_CACHE = "gastos-api-v1";
 
 // Archivos estáticos que forman el "app shell"
@@ -53,27 +53,19 @@ async function apiFetch(url, options = {}) {
 
 // FETCH: manejar peticiones
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
+  const req = event.request;
+  const url = new URL(req.url);
 
-  // 👉 Si es una petición a /api/, NO la tocamos
-  if (url.pathname.startsWith("/api/")) {
-    return; // Dejar que el navegador la maneje normalmente
+  // Solo manejamos recursos de NUESTRO propio origen (Netlify)
+  // No tocamos nada que vaya a Render u otros dominios
+  if (url.origin !== self.location.origin) {
+    return; // dejar que el navegador haga la petición normal
   }
 
-  // Resto de archivos estáticos sí se cachean
-  event.respondWith(
-    caches.match(event.request).then((cacheRes) => {
-      return (
-        cacheRes ||
-        fetch(event.request).then((fetchRes) => {
-          return caches.open("fintrack-cache-v1").then((cache) => {
-            cache.put(event.request, fetchRes.clone());
-            return fetchRes;
-          });
-        })
-      );
-    })
-  );
+  // Para todo lo estático (HTML, CSS, JS, imágenes, etc.) usamos cache-first
+  if (req.method === "GET") {
+    event.respondWith(cacheFirst(req));
+  }
 });
 
 self.addEventListener("push", (event) => {
