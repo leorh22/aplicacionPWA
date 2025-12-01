@@ -5,11 +5,19 @@ import { guardarOffline, obtenerOffline, limpiarOffline } from "./db.js";
 const LS_OFFLINE_KEY = "gastosOfflinePendientes";
 
 //const API_URL = "http://localhost:3000/api/gastos";
-const API_URL = window.location.hostname.includes("localhost")
-  ? "http://localhost:5000/api/gastos"
-  : "https://aplicacionpwa.onrender.com/api/gastos";
+//const API_URL = "/api/gastos";
+//const API_PRESUPUESTOS = "/api/presupuestos";
+/*const API_URL = window.location.hostname.includes("localhost")
+  ? "http://localhost:3000/api/gastos"
+  : "https://aplicacionpwa.onrender.com/api/gastos";*/
 
-const API_PRESUPUESTOS = '/api/presupuestos';
+const API_BASE_URL = window.location.hostname.includes("localhost")
+  ? "http://localhost:3000"
+  : "https://aplicacionpwa.onrender.com";
+
+const API_URL = `${API_BASE_URL}/api/gastos`;
+const API_PRESUPUESTOS = `${API_BASE_URL}/api/presupuestos`;
+
 const form = document.getElementById("formGasto");
 const popup = document.getElementById("popup");
 const tituloPopup = document.getElementById("tituloPopup");
